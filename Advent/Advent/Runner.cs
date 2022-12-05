@@ -30,13 +30,13 @@ namespace Advent
                     var result = await assingment.RunAsync(lines, cancellationToken).ConfigureAwait(false);
 
                     Logger.Line($"Result of {assingment.Name}: {result}");
-
-                    Logger.Line();
                 }
                 catch(Exception ex) 
                 {
                     Logger.ErrorLine($"Exception when running assignment {assingment.Name}: {ex.Message}");
                 }
+
+                Logger.Line();
             }
         }
     }
