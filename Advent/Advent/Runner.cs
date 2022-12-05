@@ -33,7 +33,7 @@ namespace Advent
                 }
                 catch(Exception ex) 
                 {
-                    Logger.ErrorLine($"Exception when running assignment {assingment.Name}: {ex.Message}");
+                    Logger.ErrorLine($"Exception when running assignment {assingment.Name}: {ex.Message}\n{ex.StackTrace}");
                 }
 
                 Logger.Line();
