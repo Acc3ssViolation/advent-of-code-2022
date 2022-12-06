@@ -90,12 +90,8 @@ namespace Advent.Assignments
                 ref var fromStack = ref stacks[from];
                 ref var toStack = ref stacks[to];
 
-                for (var i = 0; i < count; i++)
-                {
-                    var fromIndex = fromStack.depth - 1 - i;
-                    var toIndex = toStack.depth + i;
-                    toStack.data[toIndex] = fromStack.data[fromIndex];
-                }
+                Array.Copy(fromStack.data, fromStack.depth - count, toStack.data, toStack.depth, count);
+                Array.Reverse(toStack.data, toStack.depth, count);
 
                 toStack.depth += count;
                 fromStack.depth -= count;
