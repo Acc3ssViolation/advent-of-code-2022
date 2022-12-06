@@ -36,11 +36,14 @@ namespace Advent
                     Logger.Line($"Result of {assingment.Name}: {result}");
                     Logger.Line($"Took {stopwatch.ElapsedMilliseconds} ms");
                 }
-                catch(Exception ex) 
+                catch(Exception ex)
                 {
                     stopwatch.Stop();
                     Logger.ErrorLine($"Exception when running assignment {assingment.Name}: {ex.Message}\n{ex.StackTrace}");
                     Logger.ErrorLine($"Took {stopwatch.ElapsedMilliseconds} ms");
+#if DEBUG
+                    throw;
+#endif
                 }
 
                 Logger.Line();
