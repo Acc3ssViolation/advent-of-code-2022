@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Advent.Assignments
 {
-    internal class Day07_1 : IAssignment
+    internal class Day07_2 : IAssignment
     {
         public Task<string> RunAsync(IReadOnlyList<string> input, CancellationToken cancellationToken = default)
         {
@@ -67,14 +67,19 @@ namespace Advent.Assignments
             //});
 
             // Do the assignment
-            var sum = 0;
-            Visit(root, (node, _) => {
+            var totalSpace = 70000000;
+            var requiredSpace = 30000000;
+            var freeSpace = totalSpace - root.Size;
+            var spaceToDelete = requiredSpace - freeSpace;
+            var smallest = int.MaxValue;
+            Visit(root, (node, _) =>
+            {
                 var size = node.Size;
-                if (size <= 100000)
-                    sum += size;
+                if (size < smallest && size >= spaceToDelete)
+                    smallest = size;
             });
 
-            return Task.FromResult(sum.ToString());
+            return Task.FromResult(smallest.ToString());
         }
 
         private static void Visit(DirectoryNode node, Action<DirectoryNode, int> action, int depth = 0)
@@ -83,47 +88,6 @@ namespace Advent.Assignments
             foreach (var child in node.Children)
             {
                 Visit(child.Value, action, depth + 1);
-            }
-        }
-    }
-
-    internal class DirectoryNode
-    {
-        private Dictionary<string, DirectoryNode> _children;
-        private DirectoryNode? _parent;
-
-        public string Name { get; }
-        public int Size { get; private set; }
-        public IReadOnlyDictionary<string, DirectoryNode> Children => _children;
-        public DirectoryNode Parent => _parent ?? this;
-
-        public DirectoryNode(string name)
-        {
-            Name = name;
-            _children = new Dictionary<string, DirectoryNode>();
-        }
-
-        public void AddDirectory(string name)
-        {
-            var child = new DirectoryNode(name)
-            {
-                _parent = this
-            };
-            _children.Add(name, child);
-        }
-
-        public void AddFile(int size)
-        {
-            Size += size;
-        }
-
-        public void AddChildSizes()
-        {
-            foreach (var child in Children)
-            {
-                var c = child.Value;
-                c.AddChildSizes();
-                Size += c.Size;
             }
         }
     }
