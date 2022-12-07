@@ -1,0 +1,6 @@
+15
+12
+data start
+A Y
+B X
+C Z

@@ -14,4 +14,12 @@ foreach (var item in all)
         runner.Add(assignment);
 }
 
+runner.LogTimingToFile = true;
+runner.Prepare();
+
+await runner.RunTestsAsync(default);
+
+Console.WriteLine("Press any key to continue...");
+try { Console.Read(); } catch { return; }
+
 await runner.RunAsync(default);

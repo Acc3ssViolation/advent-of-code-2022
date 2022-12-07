@@ -8,18 +8,19 @@ namespace Advent
 {
     internal static class Logger
     {
-        private const string White = "\u001b[37m";
-        private const string Red = "\u001b[31m";
-        private const string Yellow = "\u001b[33m";
-        private const string Green = "\u001b[32m";
+        public const string White = "\u001b[37m";
+        public const string Red = "\u001b[31m";
+        public const string Yellow = "\u001b[33m";
+        public const string Green = "\u001b[32m";
 
         public static void Line()
         {
             Console.WriteLine();
         }
 
-        public static void Line(string message)
+        public static void Line(string message, string color = White)
         {
+            Console.Write(color);
             Console.WriteLine(message);
             Console.Write(White);
         }
@@ -42,6 +43,13 @@ namespace Advent
         {
             Console.Write(Green);
             Console.WriteLine(message);
+            Console.Write(White);
+        }
+
+        public static void Append(string message, string color = White)
+        {
+            Console.Write(color);
+            Console.Write(message);
             Console.Write(White);
         }
     }

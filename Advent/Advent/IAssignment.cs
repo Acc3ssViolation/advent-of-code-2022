@@ -1,4 +1,6 @@
-﻿namespace Advent
+﻿using System;
+
+namespace Advent
 {
     internal interface IAssignment
     {
@@ -12,7 +14,21 @@
                 var dayEnd = name.IndexOf("_");
                 if (dayEnd == -1)
                     return name + ".txt";
-                return name.Substring(0, dayEnd) + ".txt";
+                return string.Concat(name.AsSpan(0, dayEnd), ".txt");
+            }
+        }
+
+        virtual string TestFile => "test-" + InputFile;
+
+        virtual int Part
+        {
+            get
+            {
+                var name = GetType().Name;
+                var dayEnd = name.IndexOf("_");
+                if (dayEnd == -1)
+                    return 1;
+                return int.Parse(name[(dayEnd + 1)..]);
             }
         }
 
