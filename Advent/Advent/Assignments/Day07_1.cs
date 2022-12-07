@@ -12,7 +12,7 @@ namespace Advent.Assignments
         public Task<string> RunAsync(IReadOnlyList<string> input, CancellationToken cancellationToken = default)
         {
             var listingDirectory = false;
-            IDirectoryNode root = new DirectoryNode("/");
+            var root = new DirectoryNode("/");
             var cd = root;
 
             foreach (var line in input)
@@ -30,7 +30,7 @@ namespace Advent.Assignments
                             else if (target == "..")
                                 cd = cd.Parent;
                             else
-                                cd = cd.Children[target] as IDirectoryNode ?? throw new Exception("Fuck");
+                                cd = cd.Children[target];
                             break;
                         case "ls":
                             listingDirectory = true;
@@ -45,117 +45,86 @@ namespace Advent.Assignments
                         if (parts[0] == "dir")
                         {
                             var name = parts[1];
-                            if (!cd.Children.ContainsKey(name))
-                                cd.AddChild(new DirectoryNode(name));
+                            cd.AddDirectory(name);
                         }
                         else
                         {
-                            var name = parts[1];
-                            if (!cd.Children.ContainsKey(name))
-                            {
-                                var size = long.Parse(parts[0]);
-                                cd.AddChild(new FileNode(name, size));
-                            }
+                            var size = long.Parse(parts[0]);
+                            cd.AddFile(size);
                         }
                     }
                 }
             }
 
+            // Prepare sizes
+            root.AddChildSizes();
+
             // Print the tree
-            Visit(root, (node, depth) => {
-                var indent = new string(' ', depth * 2);
-                if (node.IsDirectory)
-                {
-                    Logger.DebugLine($"{indent}- {node.Name} (dir)");
-                }
-                else
-                {
-                    Logger.DebugLine($"{indent}- {node.Name} (file, size={node.Size})");
-                }
-            });
+            //Visit(root, (node, depth) =>
+            //{
+            //    var indent = new string(' ', depth * 2);
+            //    Logger.DebugLine($"{indent}- {node.Name} (dir, size={node.Size})");
+            //});
 
             // Do the assignment
             var sum = 0L;
             Visit(root, (node, _) => {
                 var size = node.Size;
-                if (node.IsDirectory && size <= 100000)
+                if (size <= 100000)
                     sum += size;
             });
 
             return Task.FromResult(sum.ToString());
         }
 
-        private static void Visit(IFileSystemNode node, Action<IFileSystemNode, int> action, int depth = 0)
+        private static void Visit(DirectoryNode node, Action<DirectoryNode, int> action, int depth = 0)
         {
             action(node, depth);
-            if (node.IsDirectory)
+            foreach (var child in node.Children)
             {
-                foreach (var child in node.Children)
-                {
-                    Visit(child.Value, action, depth + 1);
-                }
+                Visit(child.Value, action, depth + 1);
             }
         }
     }
 
-    internal interface IFileSystemNode
+    internal class DirectoryNode
     {
-        string Name { get; }
-        long Size { get; }
-        bool IsDirectory { get; }
-        IReadOnlyDictionary<string, IFileSystemNode> Children { get; }
-        IDirectoryNode Parent { get; set; }
-    }
-
-    internal interface IDirectoryNode : IFileSystemNode
-    {
-        bool IFileSystemNode.IsDirectory => true;
-
-        long IFileSystemNode.Size => Children.Aggregate(0L, (s, c) => s + c.Value.Size);
-
-        void AddChild(IFileSystemNode child);
-    }
-
-    internal class DirectoryNode : IDirectoryNode
-    {
-        private readonly Dictionary<string, IFileSystemNode> _children;
+        private Dictionary<string, DirectoryNode> _children;
+        private DirectoryNode? _parent;
 
         public string Name { get; }
-
-        public IReadOnlyDictionary<string, IFileSystemNode> Children => _children;
-
-        public IDirectoryNode Parent { get; set; }
+        public long Size { get; private set; }
+        public IReadOnlyDictionary<string, DirectoryNode> Children => _children;
+        public DirectoryNode Parent => _parent ?? this;
 
         public DirectoryNode(string name)
         {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-            _children= new Dictionary<string, IFileSystemNode>();
-            Parent = this;
+            Name = name;
+            _children = new Dictionary<string, DirectoryNode>();
         }
 
-        public void AddChild(IFileSystemNode child)
+        public void AddDirectory(string name)
         {
-            _children.Add(child.Name, child);
-            child.Parent = this;
+            var child = new DirectoryNode(name)
+            {
+                _parent = this
+            };
+            _children.Add(name, child);
         }
-    }
 
-    internal class FileNode : IFileSystemNode
-    {
-        public string Name { get; }
-
-        public long Size { get; }
-
-        public bool IsDirectory => false;
-
-        public IReadOnlyDictionary<string, IFileSystemNode> Children => throw new NotSupportedException();
-
-        public IDirectoryNode Parent { get; set; }
-
-        public FileNode(string name, long size)
+        public void AddFile(long size)
         {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-            Size = size;
+            Size += size;
+        }
+
+        public void AddChildSizes()
+        {
+            foreach (var child in Children)
+            {
+                var c = child.Value;
+                c.AddChildSizes();
+                Size += c.Size;
+            }
         }
     }
 }
