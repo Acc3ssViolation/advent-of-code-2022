@@ -39,9 +39,9 @@ namespace Advent
             var failed = 0;
             var unknown = 0;
             // Do a run on the test data
-            Logger.WarningLine("=================================================");
-            Logger.WarningLine("Running test data");
-            Logger.WarningLine("=================================================");
+            Logger.Line("=================================================", Logger.Green);
+            Logger.Line("Running test data", Logger.Green);
+            Logger.Line("=================================================", Logger.Green);
             foreach (var assingment in _assignments)
             {
                 if (cancellationToken.IsCancellationRequested)
@@ -124,9 +124,9 @@ namespace Advent
             var stopwatch = new Stopwatch();
 
             // Do a run on the real data
-            Logger.WarningLine("=================================================");
-            Logger.WarningLine("Running real data");
-            Logger.WarningLine("=================================================");
+            Logger.Line("=================================================", Logger.Yellow);
+            Logger.Line("Running real data", Logger.Yellow);
+            Logger.Line("=================================================", Logger.Yellow);
             foreach (var assingment in _assignments)
             {
                 if (cancellationToken.IsCancellationRequested)

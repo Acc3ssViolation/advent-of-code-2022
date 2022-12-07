@@ -2,6 +2,8 @@
 
 var runner = new Runner();
 
+Logger.SetLevel(LogLevel.Info);
+
 var interfaceType = typeof(IAssignment);
 var all = AppDomain.CurrentDomain.GetAssemblies()
   .SelectMany(x => x.GetTypes())
