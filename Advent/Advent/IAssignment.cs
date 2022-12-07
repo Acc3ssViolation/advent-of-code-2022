@@ -32,6 +32,6 @@ namespace Advent
             }
         }
 
-        public Task<string> RunAsync(IReadOnlyList<string> input, CancellationToken cancellationToken = default);
+        public string Run(IReadOnlyList<string> input);
     }
 }

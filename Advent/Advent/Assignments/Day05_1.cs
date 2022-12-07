@@ -17,7 +17,7 @@ namespace Advent.Assignments
             public int depth;
         }
 
-        public Task<string> RunAsync(IReadOnlyList<string> input, CancellationToken cancellationToken = default)
+        public string Run(IReadOnlyList<string> input)
         {
             // First parse the stack layout
             var reversedStacks = new List<Stack<char>>();
@@ -104,7 +104,7 @@ namespace Advent.Assignments
                 sb.Append(stack.data[stack.depth - 1]);
             }
 
-            return Task.FromResult(sb.ToString());
+            return sb.ToString();
         }
     }
 }

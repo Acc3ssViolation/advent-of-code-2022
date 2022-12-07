@@ -2,7 +2,7 @@
 {
     internal class Day01_2 : IAssignment
     {
-        public Task<string> RunAsync(IReadOnlyList<string> input, CancellationToken cancellationToken = default)
+        public string Run(IReadOnlyList<string> input)
         {
             var calories = new List<int>();
             var sum = 0;
@@ -28,7 +28,7 @@
             var lastIndex = calories.Count - 1;
             var total = calories[lastIndex] + calories[lastIndex - 1] + calories[lastIndex - 2];
 
-            return Task.FromResult(total.ToString());
+            return total.ToString();
         }
     }
 }

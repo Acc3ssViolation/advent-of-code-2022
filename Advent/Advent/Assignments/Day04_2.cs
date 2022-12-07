@@ -31,7 +31,7 @@ namespace Advent.Assignments
             }
         }
 
-        public Task<string> RunAsync(IReadOnlyList<string> input, CancellationToken cancellationToken = default)
+        public string Run(IReadOnlyList<string> input)
         {
             var score = 0;
 
@@ -47,7 +47,7 @@ namespace Advent.Assignments
                 }
             }
 
-            return Task.FromResult(score.ToString());
+            return score.ToString();
         }
     }
 }

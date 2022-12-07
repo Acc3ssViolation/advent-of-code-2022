@@ -26,7 +26,7 @@ namespace Advent
 
             foreach (var assignment in _assignments)
             {
-                var method = assignment.GetType().GetRuntimeMethods().First(m => m.Name == nameof(IAssignment.RunAsync));
+                var method = assignment.GetType().GetRuntimeMethods().First(m => m.Name == nameof(IAssignment.Run));
                 RuntimeHelpers.PrepareMethod(method.MethodHandle);
             }
         }
@@ -75,7 +75,7 @@ namespace Advent
 
                     Logger.Line($"Running assignment test {assingment.Name}");
                     stopwatch.Restart();
-                    var result = await assingment.RunAsync(lines, cancellationToken).ConfigureAwait(false);
+                    var result = assingment.Run(lines);
                     stopwatch.Stop();
                     Logger.Append($"Result of test {assingment.Name}: ");
                     if (expectedResult == string.Empty)
@@ -141,7 +141,7 @@ namespace Advent
 
                     Logger.Line($"Running assignment {assingment.Name}");
                     stopwatch.Restart();
-                    var result = await assingment.RunAsync(lines, cancellationToken).ConfigureAwait(false);
+                    var result = assingment.Run(lines);
                     stopwatch.Stop();
                     Logger.Line($"Result of {assingment.Name}: {result}");
                     Logger.Line($"Took {stopwatch.GetMilliseconds():F4} ms ({stopwatch.ElapsedTicks} ticks)");

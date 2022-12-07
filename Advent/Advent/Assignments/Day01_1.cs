@@ -2,7 +2,7 @@
 {
     internal class Day01_1 : IAssignment
     {
-        public Task<string> RunAsync(IReadOnlyList<string> input, CancellationToken cancellationToken = default)
+        public string Run(IReadOnlyList<string> input)
         {
             var highestSum = 0;
             var sum = 0;
@@ -23,7 +23,7 @@
                 }
             }
 
-            return Task.FromResult(highestSum.ToString());
+            return highestSum.ToString();
         }
     }
 }

@@ -32,7 +32,7 @@ namespace Advent.Assignments
             }
         }
 
-        public Task<string> RunAsync(IReadOnlyList<string> input, CancellationToken cancellationToken = default)
+        public string Run(IReadOnlyList<string> input)
         {
             int counter = 0;
             var fifo = new Fifo(14);
@@ -47,7 +47,7 @@ namespace Advent.Assignments
                 }
             }
 
-            return Task.FromResult(counter.ToString());
+            return counter.ToString();
         }
     }
 }

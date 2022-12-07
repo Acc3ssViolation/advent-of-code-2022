@@ -9,7 +9,7 @@
             Scissors = 3,
         }
 
-        public Task<string> RunAsync(IReadOnlyList<string> input, CancellationToken cancellationToken = default)
+        public string Run(IReadOnlyList<string> input)
         {
             var score = 0;
 
@@ -39,7 +39,7 @@
                 score += result;
             }
 
-            return Task.FromResult(score.ToString());
+            return score.ToString();
         }
 
         private Move GetSelfMove(char move) => move switch

@@ -9,7 +9,7 @@ namespace Advent.Assignments
 {
     internal class Day06_1 : IAssignment
     {
-        public Task<string> RunAsync(IReadOnlyList<string> input, CancellationToken cancellationToken = default)
+        public string Run(IReadOnlyList<string> input)
         {
             int counter = 0;
             var stream = input[0];
@@ -29,7 +29,7 @@ namespace Advent.Assignments
                 }
             }
 
-            return Task.FromResult(counter.ToString());
+            return counter.ToString();
         }
     }
 }

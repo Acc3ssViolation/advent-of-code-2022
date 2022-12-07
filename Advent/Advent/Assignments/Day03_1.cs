@@ -8,7 +8,7 @@ namespace Advent.Assignments
 {
     internal class Day03_1 : IAssignment
     {
-        public Task<string> RunAsync(IReadOnlyList<string> input, CancellationToken cancellationToken = default)
+        public string Run(IReadOnlyList<string> input)
         {
             var sum = 0;
 
@@ -31,7 +31,7 @@ namespace Advent.Assignments
                 addedItems.Clear();
             }
 
-            return Task.FromResult(sum.ToString());
+            return sum.ToString();
         }
 
         private static int GetPriority(char item)

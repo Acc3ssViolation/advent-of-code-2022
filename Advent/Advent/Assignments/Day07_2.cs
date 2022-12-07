@@ -9,7 +9,7 @@ namespace Advent.Assignments
 {
     internal class Day07_2 : IAssignment
     {
-        public Task<string> RunAsync(IReadOnlyList<string> input, CancellationToken cancellationToken = default)
+        public string Run(IReadOnlyList<string> input)
         {
             var listingDirectory = false;
             var root = new DirectoryNode("/");
@@ -79,7 +79,7 @@ namespace Advent.Assignments
                     smallest = size;
             });
 
-            return Task.FromResult(smallest.ToString());
+            return smallest.ToString();
         }
 
         private static void Visit(DirectoryNode node, Action<DirectoryNode, int> action, int depth = 0)
