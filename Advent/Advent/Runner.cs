@@ -35,7 +35,7 @@ namespace Advent
         {
             var stopwatch = new Stopwatch();
 
-            var successfull = 0;
+            var successful = 0;
             var failed = 0;
             var unknown = 0;
             // Do a run on the test data
@@ -86,7 +86,7 @@ namespace Advent
                     else if (result == expectedResult)
                     {
                         Logger.Line($"{result}", Logger.Green);
-                        successfull++;
+                        successful++;
                     }
                     else
                     {
@@ -111,8 +111,8 @@ namespace Advent
                 Logger.Line();
             }
 
-            if (successfull > 0)
-                Logger.Line($"{successfull} successfull", Logger.Green);
+            if (successful > 0)
+                Logger.Line($"{successful} successful", Logger.Green);
             if (unknown > 0)
                 Logger.Line($"{unknown} unknown", Logger.Yellow);
             if (failed > 0)
