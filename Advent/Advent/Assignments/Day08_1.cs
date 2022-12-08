@@ -124,7 +124,6 @@ namespace Advent.Assignments
 
     internal class IntSet
     {
-        private int _size;
         private uint[] _flags;
         private int _count;
 
@@ -133,14 +132,10 @@ namespace Advent.Assignments
         public IntSet(int size)
         {
             _flags = new uint[(size - 1) / 32 + 1];
-            _size = size;
         }
 
         public bool TryAdd(int value)
         {
-            Debug.Assert(value >= 0);
-            Debug.Assert(value < _size);
-
             var index = value / 32;
             var mask = 1U << (value & 0x1F);
             if ((_flags[index] & mask ) > 0)
