@@ -63,45 +63,13 @@ namespace Advent.Assignments
             }
 
             var sd = newPos - sections[index + 1];
-            var moveChild = true;
-            if (sd.x >= -1 && sd.x <= 1 && sd.y >= -1 && sd.y <= 1)
+            if (sd.x < -1 || sd.x > 1 || sd.y < -1 || sd.y > 1)
             {
-                // Still within range, don't move it
-                moveChild = false;
-            }
-            else if (sd.x == 0)
-            {
-                // Vertical out of range
-                if (sd.y > 0)
-                {
-                    sd.y -= 1;
-                }
-                else
-                {
-                    sd.y += 1;
-                }
-            }
-            else if (sd.y == 0)
-            {
-                // Horizontal out of range
-                if (sd.x > 0)
-                {
-                    sd.x -= 1;
-                }
-                else
-                {
-                    sd.x += 1;
-                }
-            }
-            else
-            {
-                // Diagonal
-                sd.x = Math.Clamp(sd.x, -1, 1);
-                sd.y = Math.Clamp(sd.y, -1, 1);
-            }
-
-            if (moveChild)
+                // Clamp and move
+                sd.x = Math.Sign(sd.x);
+                sd.y = Math.Sign(sd.y);
                 Move(delta, sections[index + 1] + sd, sections, index + 1);
+            }
 
             sections[index] = newPos;
         }
