@@ -1,12 +1,25 @@
-﻿namespace Advent.Assignments
+﻿//#define LOG_STEPS
+using System.Text;
+
+namespace Advent.Assignments
 {
     internal class Day09_1 : IAssignment
     {
         public string Run(IReadOnlyList<string> input)
         {
+            return Run(input, 2);
+        }
+
+        public static string Run(IReadOnlyList<string> input, int ropeLength)
+        {
             var visitedPlaces = new HashSet<Vector2Int>();
-            var head = new Vector2Int();
-            var tail = new Vector2Int();
+            var sections = new Vector2Int[ropeLength];
+
+#if LOG_STEPS
+            var boardSize = ropeLength == 2 ? 5 : 15;
+            Logger.DebugLine($"== Initial State ==");
+            DebugPrint(sections, boardSize, boardSize);
+#endif
 
             foreach (var line in input)
             {
@@ -20,19 +33,103 @@
                     'L' => Vector2Int.Left,
                     _ => Vector2Int.Right,
                 };
-
+#if LOG_STEPS
+                Logger.DebugLine($"== {move} {distance} ==");
+                Logger.Line();
+#endif
                 for (int i = 0; i < distance; i++)
                 {
-                    var newHead = head + delta;
-                    if (tail.MaxDistance(newHead) > 1)
-                        tail = head;
-                    head = newHead;
-                    visitedPlaces.Add(tail);
+                    Move(delta, sections[0] + delta, sections, 0);
+                    visitedPlaces.Add(sections[ropeLength - 1]);
+#if LOG_STEPS
+                    DebugPrint(sections, boardSize, boardSize);
+#endif
                 }
             }
 
+#if LOG_STEPS
+            DebugPrint(visitedPlaces.ToArray(), boardSize, boardSize);
+#endif
+
             return visitedPlaces.Count.ToString();
         }
+
+        private static void Move(Vector2Int delta, Vector2Int newPos, Vector2Int[] sections, int index)
+        {
+            if (index >= sections.Length - 1)
+            {
+                sections[index] = newPos;
+                return;
+            }
+
+            var sd = newPos - sections[index + 1];
+            var moveChild = true;
+            if (sd.x >= -1 && sd.x <= 1 && sd.y >= -1 && sd.y <= 1)
+            {
+                // Still within range, don't move it
+                moveChild = false;
+            }
+            else if (sd.x == 0)
+            {
+                // Vertical out of range
+                if (sd.y > 0)
+                {
+                    sd.y -= 1;
+                }
+                else
+                {
+                    sd.y += 1;
+                }
+            }
+            else if (sd.y == 0)
+            {
+                // Horizontal out of range
+                if (sd.x > 0)
+                {
+                    sd.x -= 1;
+                }
+                else
+                {
+                    sd.x += 1;
+                }
+            }
+            else
+            {
+                // Diagonal
+                sd.x = Math.Clamp(sd.x, -1, 1);
+                sd.y = Math.Clamp(sd.y, -1, 1);
+            }
+
+            if (moveChild)
+                Move(delta, sections[index + 1] + sd, sections, index + 1);
+
+            sections[index] = newPos;
+        }
+
+#if LOG_STEPS
+        private static void DebugPrint(Vector2Int[] sections, int width, int height)
+        {
+            var sb = new StringBuilder();
+            for (int y = height; y >= -height; y--)
+            {
+                for (int x = -width; x <= width; x++)
+                {
+                    var chr = '.';
+                    for (int i = 0; i < sections.Length; i++)
+                    {
+                        if (sections[i].x == x && sections[i].y == y)
+                        {
+                            chr = i.ToString()[0];
+                            break;
+                        }
+                    }
+                    sb.Append(chr);
+                }
+                sb.AppendLine();
+            }
+            Logger.DebugLine(sb.ToString());
+        }
+#endif
     }
 
     internal struct Vector2Int
@@ -44,13 +141,6 @@
         {
             this.x = x;
             this.y = y;
-        }
-
-        public int MaxDistance(Vector2Int other)
-        {
-            var dx = Math.Abs(other.x - x);
-            var dy = Math.Abs(other.y - y);
-            return Math.Max(dy, dx);
         }
 
         public override string ToString()

@@ -2,6 +2,7 @@
 
 var runner = new Runner();
 
+const int iterations = 1;
 Logger.SetLevel(LogLevel.Info);
 
 var interfaceType = typeof(IAssignment);
@@ -24,4 +25,5 @@ await runner.RunTestsAsync(default);
 Console.WriteLine("Press any key to continue...");
 try { Console.Read(); } catch { return; }
 
-await runner.RunAsync(default);
+for (var i = 0; i < iterations; i++)
+    await runner.RunAsync(default);
