@@ -16,9 +16,10 @@ namespace Advent.Assignments
 
             foreach (var line in input)
             {
-                var firstCompartment = line[..(line.Length / 2)];
-                var secondCompartment = line[(line.Length / 2)..];
-                
+                var halfLineLength = line.Length / 2;
+                var firstCompartment = line.AsSpan(0, halfLineLength);
+                var secondCompartment = line.AsSpan(halfLineLength, halfLineLength);
+
                 foreach (var item in secondCompartment)
                 {
                     if (!addedItems.Contains(item) && firstCompartment.Contains(item))

@@ -24,7 +24,7 @@ namespace Advent.Assignments
             foreach (var line in input)
             {
                 var move = line[0];
-                var distance = int.Parse(line[2..]);
+                var distance = int.Parse(line.AsSpan(2));
 
                 Vector2Int delta = move switch
                 {

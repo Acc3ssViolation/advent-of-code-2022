@@ -28,7 +28,7 @@ namespace Advent
                 var dayEnd = name.IndexOf("_");
                 if (dayEnd == -1)
                     return 1;
-                return int.Parse(name[(dayEnd + 1)..]);
+                return int.Parse(name.AsSpan(dayEnd + 1));
             }
         }
 
