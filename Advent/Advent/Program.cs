@@ -3,7 +3,7 @@
 var runner = new Runner();
 
 const int iterations = 1;
-Logger.SetLevel(LogLevel.Info);
+//Logger.SetLevel(LogLevel.Info);
 
 var interfaceType = typeof(IAssignment);
 var all = AppDomain.CurrentDomain.GetAssemblies()
