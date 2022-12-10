@@ -50,7 +50,8 @@ namespace Advent.Assignments
 
             for (int y = 0; y < height; y++)
             {
-                Logger.Line(new string(screen.AsSpan(y * width, width)));
+                Console.Out.Write(screen.AsSpan(y * width, width));
+                Console.Out.Write('\n');
             }
 
             return "";
