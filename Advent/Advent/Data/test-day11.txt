@@ -1,4 +1,5 @@
 ﻿10605
+2713310158
 data start
 Monkey 0:
   Starting items: 79, 98
