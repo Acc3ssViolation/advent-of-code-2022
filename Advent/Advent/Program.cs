@@ -4,7 +4,7 @@ using Advent.Assignments;
 
 var runner = new Runner();
 
-const int Iterations = 1;
+const int Iterations = 10;
 //Logger.SetLevel(LogLevel.Info);
 
 #if AUTO_LOAD_ASSIGNMENTS
