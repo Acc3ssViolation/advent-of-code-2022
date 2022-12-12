@@ -8,9 +8,7 @@
             var height = input.Count;
 
             var map = new byte[width * height];
-            var distances = new int[width * height];
-            var visited = new IntSet(width * height);
-            var startNode = new Vector2Int();
+            var startNodeIndex = 0;
             var endNodeIndex = 0;
 
             // Load map
@@ -18,15 +16,11 @@
             {
                 for (int j = 0; j < width; j++)
                 {
-                    distances[i * width + j] = int.MaxValue;
-
                     var chr = input[i][j];
                     if (chr == 'S')
                     {
-                        startNode.x = j;
-                        startNode.y = i;
+                        startNodeIndex = i * width + j;
                         chr = 'a';
-                        distances[i * width + j] = 0;
                     }
                     else if (chr == 'E')
                     {
@@ -38,30 +32,42 @@
                 }
             }
 
-            // Dijkstraaaaa
-            var x = startNode.x;
-            var y = startNode.y;
-            int shortestDistance;
+            // Not sure if this is the best way of going about it, but it works
+            var ring = new RingBuffer(width * height);
+            var visited = new IntSet(width* height);
+            var parents = new int[width * height];
+
+            // Breath First Search
+            var current = startNodeIndex;
+            visited.Add(current);
+            int shortestDistance = 0;
             while (true)
             {
-                // Distance of current node
-                var current = x + y * width;
+                if (current == endNodeIndex)
+                {
+                    // Found it!
+                    shortestDistance = 1;
+                    while ((current = parents[current]) != startNodeIndex)
+                        shortestDistance++;
+                    break;
+                }
+
+                var x = current % width;
+                var y = current / width;
                 var maxValue = map[current] + 1;
-                var nextDistance = distances[current] + 1;
+
+                //Logger.DebugLine($"[{x},{y}]");
 
                 // Left
                 if (x > 0)
                 {
                     var left = x - 1 + y * width;
                     var value = map[left];
-                    if (value <= maxValue)
+                    if (value <= maxValue && !visited.Includes(left))
                     {
-
-                        if (!visited.Includes(left))
-                        {
-                            if (distances[left] > nextDistance)
-                                distances[left] = nextDistance;
-                        }
+                        parents[left] = current;
+                        visited.Add(left);
+                        ring.Enqueue(left);
                     }
                 }
 
@@ -70,14 +76,11 @@
                 {
                     var right = x + 1 + y * width;
                     var value = map[right];
-                    if (value <= maxValue)
+                    if (value <= maxValue && !visited.Includes(right))
                     {
-
-                        if (!visited.Includes(right))
-                        {
-                            if (distances[right] > nextDistance)
-                                distances[right] = nextDistance;
-                        }
+                        parents[right] = current;
+                        visited.Add(right);
+                        ring.Enqueue(right);
                     }
                 }
 
@@ -86,14 +89,11 @@
                 {
                     var up = x + (y - 1) * width;
                     var value = map[up];
-                    if (value <= maxValue)
+                    if (value <= maxValue && !visited.Includes(up))
                     {
-
-                        if (!visited.Includes(up))
-                        {
-                            if (distances[up] > nextDistance)
-                                distances[up] = nextDistance;
-                        }
+                        parents[up] = current;
+                        visited.Add(up);
+                        ring.Enqueue(up);
                     }
                 }
 
@@ -102,71 +102,44 @@
                 {
                     var down = x + (y + 1) * width;
                     var value = map[down];
-                    if (value <= maxValue)
+                    if (value <= maxValue && !visited.Includes(down))
                     {
-
-                        if (!visited.Includes(down))
-                        {
-                            if (distances[down] > nextDistance)
-                                distances[down] = nextDistance;
-                        }
+                        parents[down] = current;
+                        visited.Add(down);
+                        ring.Enqueue(down);
                     }
                 }
 
-                // Mark current node as visited
-                visited.Add(current);
-
-                // Continue with node that has the smallest distance
-                // TODO: Optimizeee
-                var minValue = int.MaxValue;
-                var minIndex = 0;
-                for (int i = 0; i < width * height; i++)
-                {
-                    if (!visited.Includes(i) && distances[i] < minValue)
-                    {
-                        minValue = distances[i];
-                        minIndex = i;
-                    }
-                }
-
-                if (minValue == int.MaxValue)
-                {
-                    PrintDistances(distances, map, width, height);
-                    ThrowOnFailure();
-                }
-
-                if (minIndex == endNodeIndex)
-                {
-                    shortestDistance = minValue;
-                    break;
-                }
-
-                x = minIndex % width;
-                y = minIndex / width;
+                shortestDistance++;
+                
+                current = ring.Dequeue();
             }
-
-            //PrintDistances(distances, map, width, height);
 
             return shortestDistance.ToString();
         }
 
-        private static void ThrowOnFailure() => throw new Exception("Unable to find path");
-
-        private static void PrintDistances(int[] distances, byte[] map, int width, int height)
+        private class RingBuffer
         {
-            for (int y = 0; y < height; y++)
+            private int _read;
+            private int _write;
+            private int[] _buffer;
+            
+            public RingBuffer(int size)
             {
-                for (int x = 0; x < width; x++)
-                {
-                    var distance = distances[x + y * width];
-                    if (distance > 999)
-                        distance = 0;
-                    Logger.Append(((char)(map[x + y * width] + 'a')).ToString());
-                    Logger.Append(" ");
-                    Logger.Append(distance.ToString("D03"));
-                    Logger.Append("|");
-                }
-                Logger.Line();
+                _buffer = new int[size];
+            }
+
+            public void Enqueue(int value)
+            {
+                _buffer[_write] = value;
+                _write = (_write + 1) % _buffer.Length;
+            }
+
+            public int Dequeue()
+            {
+                var result = _buffer[_read];
+                _read = (_read + 1) % _buffer.Length;
+                return result;
             }
         }
     }
