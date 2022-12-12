@@ -117,30 +117,30 @@
 
             return shortestDistance.ToString();
         }
+    }
 
-        private class RingBuffer
+    internal class RingBuffer
+    {
+        private int _read;
+        private int _write;
+        private int[] _buffer;
+
+        public RingBuffer(int size)
         {
-            private int _read;
-            private int _write;
-            private int[] _buffer;
-            
-            public RingBuffer(int size)
-            {
-                _buffer = new int[size];
-            }
+            _buffer = new int[size];
+        }
 
-            public void Enqueue(int value)
-            {
-                _buffer[_write] = value;
-                _write = (_write + 1) % _buffer.Length;
-            }
+        public void Enqueue(int value)
+        {
+            _buffer[_write] = value;
+            _write = (_write + 1) % _buffer.Length;
+        }
 
-            public int Dequeue()
-            {
-                var result = _buffer[_read];
-                _read = (_read + 1) % _buffer.Length;
-                return result;
-            }
+        public int Dequeue()
+        {
+            var result = _buffer[_read];
+            _read = (_read + 1) % _buffer.Length;
+            return result;
         }
     }
 }
