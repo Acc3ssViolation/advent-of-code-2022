@@ -145,5 +145,19 @@ namespace Advent.Assignments
             _flags[index] |= mask;
             return true;
         }
+
+        public bool Includes(int value)
+        {
+            var index = value / 32;
+            var mask = 1U << (value & 0x1F);
+            return (_flags[index] & mask) > 0;
+        }
+
+        public void Add(int value)
+        {
+            var index = value / 32;
+            var mask = 1U << (value & 0x1F);
+            _flags[index] |= mask;
+        }
     }
 }

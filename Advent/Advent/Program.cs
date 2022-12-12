@@ -40,8 +40,8 @@ var interfaceType = typeof(IAssignment);
 //runner.Add(new Day09_2());
 //runner.Add(new Day10_1());
 //runner.Add(new Day10_2());
-runner.Add(new Day11_1());
-runner.Add(new Day11_2());
+//runner.Add(new Day11_1());
+//runner.Add(new Day11_2());
 runner.Add(new Day12_1());
 runner.Add(new Day12_2());
 #endif
