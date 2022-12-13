@@ -73,6 +73,8 @@ namespace Advent
 
                     var lines = testLines.Skip(lastHeaderLine + 1).ToList();
 
+                    GC.Collect();
+
                     Logger.Line($"Running assignment test {assingment.Name}");
                     stopwatch.Restart();
                     var result = assingment.Run(lines);
@@ -139,6 +141,8 @@ namespace Advent
 
                     Logger.DebugLine($"Loading data from {inputName} for assignment {assingment.Name}");
                     var lines = await File.ReadAllLinesAsync(inputName, cancellationToken).ConfigureAwait(false);
+
+                    GC.Collect();
 
                     Logger.Line($"Running assignment {assingment.Name}");
                     stopwatch.Restart();
