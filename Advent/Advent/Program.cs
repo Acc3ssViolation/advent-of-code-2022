@@ -42,8 +42,10 @@ var interfaceType = typeof(IAssignment);
 //runner.Add(new Day10_2());
 //runner.Add(new Day11_1());
 //runner.Add(new Day11_2());
-runner.Add(new Day12_1());
-runner.Add(new Day12_2());
+//runner.Add(new Day12_1());
+//runner.Add(new Day12_2());
+runner.Add(new Day13_1());
+runner.Add(new Day13_2());
 #endif
 
 runner.LogTimingToFile = true;
