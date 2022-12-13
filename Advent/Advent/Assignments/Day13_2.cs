@@ -20,12 +20,20 @@ namespace Advent.Assignments
                 nodes.Add(parser.ParseList(lineB));
             }
 
-            nodes.Sort();
+            var indexA = 1;
+            for (var i = 0; i < nodes.Count; i++)
+            {
+                if (divA.Compare(nodes[i]) > 0)
+                    indexA++;
+            }
+            var indexB = 1;
+            for (var i = 0; i < nodes.Count; i++)
+            {
+                if (divB.Compare(nodes[i]) > 0)
+                    indexB++;
+            }
 
-            var decoder = nodes.IndexOf(divA) + 1;
-            decoder *= nodes.IndexOf(divB) + 1;
-
-            return decoder.ToString();
+            return (indexA * indexB).ToString();
         }
 
         private class Parser
