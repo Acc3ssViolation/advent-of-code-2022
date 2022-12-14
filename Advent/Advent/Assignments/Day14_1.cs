@@ -50,6 +50,8 @@ namespace Advent.Assignments
         private SandCave _cave;
         private int _xOffset;
 
+        public int maxY;
+
         public SandParser(SandCave cave, int xOffset)
         {
             _str = string.Empty;
@@ -77,6 +79,8 @@ namespace Advent.Assignments
             var x = ParseInt() - _xOffset;
             _index++;
             var y = ParseInt();
+            if (y > maxY)
+                maxY = y;
             return new Vector2Int(x, y);
         }
 
@@ -159,6 +163,7 @@ namespace Advent.Assignments
         public bool SpawnSand(int x)
         {
             var index = x;
+            var spawnIndex = x;
 
             while (true)
             {
@@ -199,6 +204,9 @@ namespace Advent.Assignments
                     return false;
             }
 
+            if (index == spawnIndex)
+                return false;
+
             return true;
         }
 
@@ -208,7 +216,7 @@ namespace Advent.Assignments
             _map[sandIndex] = 'x';
             Print();
             _map[sandIndex] = '.';
-            Thread.Sleep(100);
+            Thread.Sleep(10);
         }
 
         public void Print()
