@@ -4,11 +4,17 @@ namespace Advent.Assignments
 {
     internal class Day15_2: IAssignment
     {
+        /*
+         * The point will be bordered by at least three sensor ranges (you can't enclose it with one or two sensors).
+         * This means that the point lays on the intersection of those three sensor's (range + 1) areas.
+         * We only need to check if any of these intersections is NOT covered by any other sensor's range.
+         * This is difficult because taxi cab geometry fucks with my maths and I'm just going to go ahead with day 16.
+         */
         public string Run(IReadOnlyList<string> input)
         {
             var sensors = new Sensor[input.Count];
             var segments = new Segment[input.Count];
-
+            
             for (int i = 0; i < sensors.Length; i++)
             {
                 sensors[i] = Sensor.Parse(input[i]);
