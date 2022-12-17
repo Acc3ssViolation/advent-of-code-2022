@@ -100,16 +100,16 @@ namespace Advent
                     if (LogTimingToFile)
                         await File.AppendAllTextAsync("timing.log", $"{assingment.Name} (test): {stopwatch.GetMilliseconds():F4}\n", cancellationToken).ConfigureAwait(false);
                 }
+#if !DEBUG
                 catch (Exception ex)
                 {
                     failed++;
                     stopwatch.Stop();
                     Logger.ErrorLine($"Exception when running assignment {assingment.Name}: {ex.Message}\n{ex.StackTrace}");
                     Logger.ErrorLine($"Took {stopwatch.GetMilliseconds():F4} ms ({stopwatch.ElapsedTicks} ticks)");
-#if DEBUG
-                    throw;
-#endif
                 }
+#endif
+                finally { }
 
                 Logger.Line();
             }
