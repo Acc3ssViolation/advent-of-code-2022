@@ -124,5 +124,8 @@ namespace Advent.Assignments
         public static Vector2Int operator +(Vector2Int a, Vector2Int b) => new(a.x + b.x, a.y + b.y);
         public static Vector2Int operator -(Vector2Int a, Vector2Int b) => new(a.x - b.x, a.y - b.y);
         public static Vector2Int operator *(Vector2Int a, int b) => new(a.x * b, a.y * b);
+
+        public static bool operator ==(Vector2Int a, Vector2Int b) => a.x == b.x && a.y == b.y;
+        public static bool operator !=(Vector2Int a, Vector2Int b) => a.x != b.x || a.y != b.y;
     }
 }
