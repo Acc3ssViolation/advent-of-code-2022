@@ -12,9 +12,8 @@ namespace Advent.Assignments
                 network.Parse(line);
             }
 
-            // Current node
-            // For each other node that is not OPENED in the current path
-            //   Calculate possible
+            // We only care about nodes that are not yet opened
+            // We need to know the distances between all of the nodes that can be opened
             var valve = network.GetValve("AA");
             var path = new PathNode(network, valve);
 
