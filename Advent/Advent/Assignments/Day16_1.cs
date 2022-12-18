@@ -1,7 +1,4 @@
-﻿using System.Numerics;
-using System.Xml.Linq;
-
-namespace Advent.Assignments
+﻿namespace Advent.Assignments
 {
     internal class Day16_1 : IAssignment
     {
