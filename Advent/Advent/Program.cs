@@ -1,4 +1,4 @@
-//#define AUTO_LOAD_ASSIGNMENTS
+﻿//#define AUTO_LOAD_ASSIGNMENTS
 using Advent;
 using Advent.Assignments;
 
@@ -55,7 +55,7 @@ var interfaceType = typeof(IAssignment);
 //runner.Add(new Day17_1());
 //runner.Add(new Day17_2());
 runner.Add(new Day18_1());
-//runner.Add(new Day18_2());
+runner.Add(new Day18_2());
 #endif
 
 runner.LogTimingToFile = true;
