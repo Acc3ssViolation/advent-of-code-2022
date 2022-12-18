@@ -2,6 +2,8 @@
 {
     internal class Day16_2 : IAssignment
     {
+        private record struct State(ulong AvailableValves, int Me, int Elephant, int MeDuration, int ElephantDuration, int TimeLeft);
+
         public string Run(IReadOnlyList<string> input)
         {
             var network = new ValveNetwork();
@@ -25,13 +27,13 @@
             var firstValve = network.GetValve("AA");
 
             // TODO: How the fuck do we simulate two workers at once?!
-            var bestScore = GetBestChildScore(network, availableValves, firstValve.Index, 26);
+            var bestScore = GetBestChildScore(network, new State(availableValves, firstValve.Index, firstValve.Index, 0, 0, 26));
             return bestScore.ToString();
         }
 
-        private static int GetBestChildScore(ValveNetwork network, ulong availableValves, int currentValve, int timeLeft)
+        private static int GetBestChildScore(ValveNetwork network, State state)
         {
-            if (availableValves == 0)
+            if (state.AvailableValves == 0)
                 return 0;
 
             int bestChildScore = 0;
@@ -39,22 +41,29 @@
             var valveCount = network.Count;
             for (int i = 0; i < valveCount; i++)
             {
-                if (i == currentValve)
+                if (i == state.Me || i == state.Elephant)
                     continue;
 
                 ulong valveMask = 1UL << i;
-                if ((valveMask & availableValves) == 0)
+                if ((valveMask & state.AvailableValves) == 0)
                     continue;
 
                 // What would be the score of opening this valve?
-                var openDuration = timeLeft - network.GetMinutesToOpenValve(currentValve, i);
-                if (openDuration <= 0)
-                    continue;
+                {
+                    var openDuration = state.TimeLeft - network.GetMinutesToOpenValve(state.Me, i);
+                    if (openDuration <= 0)
+                        continue;
 
-                var score = openDuration * network.GetRate(i);
-                score += GetBestChildScore(network, availableValves & ~valveMask, i, openDuration);
-                if (score > bestChildScore)
-                    bestChildScore = score;
+                    var score = openDuration * network.GetRate(i);
+                    score += GetBestChildScore(network, state with
+                    {
+                        AvailableValves = state.AvailableValves & ~valveMask,
+                        Me = i,
+                        TimeLeft = openDuration
+                    });
+                    if (score > bestChildScore)
+                        bestChildScore = score;
+                }
             }
 
             return bestChildScore;
