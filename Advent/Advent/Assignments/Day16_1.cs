@@ -1,4 +1,5 @@
-﻿using System.Xml.Linq;
+﻿using System.Numerics;
+using System.Xml.Linq;
 
 namespace Advent.Assignments
 {
@@ -12,97 +13,66 @@ namespace Advent.Assignments
                 network.Parse(line);
             }
 
+            // Some prep work, cache all paths from any valve to any other valve
+            network.CalculateAllPaths();
+
+            ulong availableValves = 0UL;
+            foreach (var valve in network.Valves)
+            {
+                if (valve.Rate == 0)
+                    continue;
+                availableValves |= 1UL << valve.Index;
+            }
+
             // We only care about nodes that are not yet opened
             // We need to know the distances between all of the nodes that can be opened
-            var valve = network.GetValve("AA");
-            var path = new PathNode(network, valve);
+            var firstValve = network.GetValve("AA");
 
-            var score = DoThing(valve, path, 30);
-
-            return score.ToString();
+            var bestScore = GetBestChildScore(network, availableValves, firstValve.Index, 30);
+            return bestScore.ToString();
         }
 
-        private static int DoThing(Valve valve, PathNode path, int minutesLeft)
+        private static int GetBestChildScore(ValveNetwork network, ulong availableValves, int currentValve, int timeLeft)
         {
-            if (minutesLeft <= 0)
-                return path.Score;
+            if (availableValves == 0)
+                return 0;
 
-            var bestChildScore = 0;
+            int bestChildScore = 0;
 
-            foreach (var nextValve in path.GetUnopenedValves())
+            var valveCount = network.Count;
+            for (int i = 0; i < valveCount; i++)
             {
-                if (nextValve == valve)
+                if (i == currentValve)
                     continue;
 
-                //Logger.DebugLine($"Checking path from {valve.Name} to unopened valve {nextValve.Name}");
+                ulong valveMask = 1UL << i;
+                if ((valveMask & availableValves) == 0)
+                    continue;
 
-                var distance = valve.RouteLengthTo(nextValve);
-                var timeLeftOnceArrived = minutesLeft - distance;
+                // What would be the score of opening this valve?
+                var openDuration = timeLeft - network.GetMinutesToOpenValve(currentValve, i);
+                if (openDuration <= 0)
+                    continue;
 
-                // Visit a path where we do not open the valve
-                var score = DoThing(nextValve, new PathNode(path, timeLeftOnceArrived), timeLeftOnceArrived);
-                if (score > bestChildScore)
-                    bestChildScore = score;
-
-                // Visit a path where we open the valve now
-                score = DoThing(nextValve, new PathNode(path, nextValve, timeLeftOnceArrived - 1), timeLeftOnceArrived - 1);
+                var score = openDuration * network.GetRate(i);
+                score += GetBestChildScore(network, availableValves & ~valveMask, i, openDuration);
                 if (score > bestChildScore)
                     bestChildScore = score;
             }
 
-            return path.Score + bestChildScore;
-        }
-    }
-
-    internal class PathNode
-    {
-        public PathNode? Parent { get; }
-        public Valve? OpenedValve { get; }
-        public int MinutesLeft { get; }
-        public int Score => MinutesLeft * OpenedValve?.Rate ?? 0;
-
-        private readonly ValveNetwork _network;
-
-        public PathNode(ValveNetwork network, Valve valve)
-        {
-            OpenedValve = valve;
-            _network = network;
-        }
-
-        public PathNode(PathNode parent, int minutesLeft)
-        {
-            Parent = parent;
-            _network = parent._network;
-            MinutesLeft = minutesLeft;
-        }
-
-        public PathNode(PathNode parent, Valve? openedValve, int minutesLeft)
-        {
-            Parent = parent;
-            _network = parent._network;
-            OpenedValve = openedValve;
-            MinutesLeft = minutesLeft;
-        }
-
-        public bool IsValveOpened(Valve valve)
-        {
-            if (valve.Rate == 0)
-                return true;
-
-            if (OpenedValve == valve)
-                return true;
-            return Parent?.IsValveOpened(valve) ?? false;
-        }
-
-        public IEnumerable<Valve> GetUnopenedValves()
-        {
-            return _network.Valves.Where(v => !IsValveOpened(v));
+            return bestChildScore;
         }
     }
 
     internal class ValveNetwork
     {
         private readonly Dictionary<string, Valve> _valves = new();
+
+        private readonly Dictionary<int, int> _pathLengths = new();
+
+        private int[]? _rates;
+
+        public int Count => _valves.Count;
 
         public void Parse(string input)
         {
@@ -111,9 +81,7 @@ namespace Advent.Assignments
             var index = 23;
             //
             var rate = ParseUtils.ParseIntPositive(input, ref index);
-            Logger.DebugLine($"{input[index]}");
             index += 25;
-            Logger.DebugLine($"{input[index]}");
             var valve = CreateOrGetValve(name);
 
             valve.SetRate(rate);
@@ -123,10 +91,53 @@ namespace Advent.Assignments
                 var link = new string(input.AsSpan(index, 2));
                 index += 4;
                 var linkedValve = CreateOrGetValve(link);
-                Logger.DebugLine(link);
                 valve.Link(linkedValve);
             }
         }
+
+        public int GetMinutesToOpenValve(int currentValve, int targetValve)
+        {
+            return _pathLengths[GetPathIndex(currentValve, targetValve)];
+        }
+
+        private static int GetPathIndex(int valveA, int valveB)
+        {
+            // We only store paths once, with the lowest index as 'from' and the highest as 'to'
+            var (from, to) = valveA < valveB ? (valveA, valveB) : (valveB, valveA);
+            return from | (to << 16);
+        }
+
+        public void CalculateAllPaths()
+        {
+            _rates = new int[_valves.Count];
+
+            foreach (var valve in _valves.Values)
+            {
+                _rates[valve.Index] = valve.Rate;
+
+                // AA is special since it's the starting valve. We need to know the paths from it even though it cannot be opened.
+                if (valve.Rate == 0 && valve.Name != "AA")
+                    continue;
+
+                foreach (var connection in _valves.Values)
+                {
+                    if (connection == valve)
+                        continue;
+                    if (connection.Rate == 0)
+                        continue;
+
+                    var pathIndex = GetPathIndex(valve.Index, connection.Index);
+                    if (!_pathLengths.ContainsKey(pathIndex))
+                    {
+                        // Calculate this path!
+                        var pathLength = valve.RouteLengthTo(connection) + 1;
+                        _pathLengths[pathIndex] = pathLength;
+                    }
+                }
+            }
+        }
+
+        public int GetRate(int index) => _rates![index];
 
         public Valve GetValve(string name) => _valves[name];
 
@@ -136,7 +147,7 @@ namespace Advent.Assignments
         {
             if (!_valves.TryGetValue(name, out var valve))
             {
-                valve = new Valve(name);
+                valve = new Valve(name, _valves.Count);
                 _valves[name] = valve;
             }
             return valve;
@@ -151,10 +162,12 @@ namespace Advent.Assignments
         public string Name { get; }
         public int Rate => _rate;
         public IReadOnlyList<Valve> Tunnels => _tunnels;
+        public int Index { get; }
 
-        public Valve(string name)
+        public Valve(string name, int index)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
+            Index = index;
         }
 
         public void SetRate(int rate) => _rate = rate;
