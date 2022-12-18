@@ -1,4 +1,6 @@
-﻿namespace Advent.Assignments
+﻿using System.Numerics;
+
+namespace Advent.Assignments
 {
     internal class Day16_2 : IAssignment
     {
@@ -39,11 +41,13 @@
             int bestChildScore = 0;
 
             var valveCount = network.Count;
-            for (int i = 0; i < valveCount; i++)
+            var valvesToCheck = state.AvailableValves;
+
+            int i;
+            while ((i = 63 - BitOperations.LeadingZeroCount(valvesToCheck)) > 0)
             {
                 ulong valveMaskMe = 1UL << i;
-                if ((valveMaskMe & state.AvailableValves) == 0)
-                    continue;
+                valvesToCheck &= ~valveMaskMe;
 
                 // Check if opening this would make sense
                 var openDurationMe = state.MeTimeLeft - network.GetMinutesToOpenValve(state.Me, i);
@@ -68,15 +72,13 @@
                 {
                     // Find a job for the elephant as well
                     var elephantDidAny = false;
-                    for (int k = 0; k < valveCount; k++)
-                    {
-                        // We can't both go to the same valve
-                        if (k == i)
-                            continue;
 
+                    var elephantValvesToCheck = state.AvailableValves & ~valveMaskMe;
+                    int k;
+                    while ((k = 63 - BitOperations.LeadingZeroCount(elephantValvesToCheck)) > 0)
+                    {
                         ulong valveMaskElephant = 1UL << k;
-                        if ((valveMaskElephant & state.AvailableValves) == 0)
-                            continue;
+                        elephantValvesToCheck &= ~valveMaskElephant;
 
                         // Check if opening this would make sense
                         var openDurationElephant = state.ElephantTimeLeft - network.GetMinutesToOpenValve(state.Elephant, k);
