@@ -24,56 +24,74 @@ namespace Advent
 
         private static LogLevel _level = LogLevel.Debug;
 
+        private static object _lock = new ();
+
         public static void SetLevel(LogLevel level) => _level = level;
 
         public static void Line()
         {
-            Console.WriteLine();
+            lock (_lock)
+                Console.WriteLine();
         }
 
         public static void Line(string message, string color = White)
         {
             if (_level > LogLevel.Info) return;
 
-            Console.Write(color);
-            Console.WriteLine(message);
-            Console.Write(White);
+            lock (_lock)
+            {
+                Console.Write(color);
+                Console.WriteLine(message);
+                Console.Write(White);
+            }
         }
 
         public static void ErrorLine(string message)
         {
             if (_level > LogLevel.Error) return;
 
-            Console.Write(Red);
-            Console.WriteLine(message);
-            Console.Write(White);
+            lock (_lock)
+            {
+                Console.Write(Red);
+                Console.WriteLine(message);
+                Console.Write(White);
+            }
         }
 
         public static void WarningLine(string message)
         {
             if (_level > LogLevel.Warning) return;
 
-            Console.Write(Yellow);
-            Console.WriteLine(message);
-            Console.Write(White);
+            lock (_lock)
+            {
+                Console.Write(Yellow);
+                Console.WriteLine(message);
+                Console.Write(White);
+            }
         }
 
         public static void DebugLine(string message)
         {
             if (_level > LogLevel.Debug) return;
 
-            Console.Write(Green);
-            Console.WriteLine(message);
-            Console.Write(White);
+            lock (_lock)
+            {
+                Console.Write(Green);
+                Console.WriteLine(message);
+                Console.Write(White);
+            }
         }
 
         public static void Append(string message, string color = White)
         {
             if (_level > LogLevel.Info) return;
 
-            Console.Write(color);
-            Console.Write(message);
-            Console.Write(White);
+            lock (_lock)
+            {
+                Console.Write(color);
+                Console.Write(message);
+                Console.Write(White);
+            }
         }
     }
 }
