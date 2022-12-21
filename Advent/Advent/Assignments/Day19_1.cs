@@ -35,41 +35,27 @@ namespace Advent.Assignments
             {
                 oreRobots = 1,
                 minutesLeft = minutesLeft,
+                allowedRobots = Resource.Ore | Resource.Clay,
             };
 
             var maxChildScore = 0;
-            var childScore = DoChoice(blueprint, state, Resource.Clay);//, out var childPath);
+            var childScore = DoChoice(blueprint, state, Resource.Clay);
             if (childScore > maxChildScore)
                 maxChildScore = childScore;
-            childScore = DoChoice(blueprint, state, Resource.Ore);//, out var childPath1);
+            childScore = DoChoice(blueprint, state, Resource.Ore);
             if (childScore > maxChildScore)
             {
                 maxChildScore = childScore;
-                //childPath = childPath1;
             }
 
             Logger.DebugLine($"Blueprint {blueprint.number} can get at most {maxChildScore} geodes");
 
-            //Logger.DebugLine(state.ToString());
-            //do
-            //{
-            //    Logger.WarningLine($"Build {childPath.buildCommand} robot");
-            //    Logger.DebugLine(childPath.finalState.ToString());
-            //} while ((childPath = childPath.child) != null);
 
             return blueprint.number * maxChildScore;
         }
 
-        private class PathNode
-        {
-            public PathNode? child;
-            public Resource buildCommand;
-            public State finalState;
-        }
-
         private static bool UpdateState(Blueprint blueprint, ref State state, Resource build)
         {
-            //Logger.Line(build.ToString());
             switch (build)
             {
                 case Resource.Ore:
@@ -77,11 +63,12 @@ namespace Advent.Assignments
                         var oreTimeout = GetMinutesUntilResourceIsAtLevel(ref state, Resource.Ore, blueprint.oreRobotOreCost);
                         if (AdvanceTime(ref state, oreTimeout + 1))
                         {
-                            //path.finalState = state;
                             return true;
                         }
                         state.ore -= blueprint.oreRobotOreCost;
                         state.oreRobots++;
+                        if (state.oreRobots * state.minutesLeft + state.ore >= state.minutesLeft * blueprint.maxOreCost)
+                            state.bannedRobots |= Resource.Ore;
                     }
                     break;
 
@@ -90,50 +77,41 @@ namespace Advent.Assignments
                         var oreTimeout = GetMinutesUntilResourceIsAtLevel(ref state, Resource.Ore, blueprint.clayRobotOreCost);
                         if (AdvanceTime(ref state, oreTimeout + 1))
                         {
-                            //path.finalState = state;
                             return true;
                         }
                         state.ore -= blueprint.clayRobotOreCost;
+                        state.allowedRobots |= Resource.Obsidian;
                         state.clayRobots++;
+                        if (state.clayRobots * state.minutesLeft + state.clay >= state.minutesLeft * blueprint.obsidianRobotClayCost)
+                            state.bannedRobots |= Resource.Clay;
                     }
                     break;
 
-                case Resource.Obisian:
+                case Resource.Obsidian:
                     {
-                        if (state.clayRobots == 0)
-                        {
-                            //path.finalState = state;
-                            return true;
-                        }
-
                         var oreTimeout = GetMinutesUntilResourceIsAtLevel(ref state, Resource.Ore, blueprint.obsidianRobotOreCost);
                         var clayTimeout = GetMinutesUntilResourceIsAtLevel(ref state, Resource.Clay, blueprint.obsidianRobotClayCost);
                         var maxTimeout = oreTimeout > clayTimeout ? oreTimeout : clayTimeout;
                         if (AdvanceTime(ref state, maxTimeout + 1))
                         {
-                            //path.finalState = state;
                             return true;
                         }
                         state.ore -= blueprint.obsidianRobotOreCost;
                         state.clay -= blueprint.obsidianRobotClayCost;
+                        state.allowedRobots |= Resource.Geode;
                         state.obsidianRobots++;
+                        if (state.obsidianRobots * state.minutesLeft + state.obsidian >= state.minutesLeft * blueprint.geodeRobotObsidianCost)
+                            state.bannedRobots |= Resource.Obsidian;
                     }
                     break;
 
                 case Resource.Geode:
                     {
-                        if (state.obsidianRobots == 0)
-                        {
-                            //path.finalState = state;
-                            return true;
-                        }
-
                         var oreTimeout = GetMinutesUntilResourceIsAtLevel(ref state, Resource.Ore, blueprint.geodeRobotOreCost);
-                        var obsidianTimeout = GetMinutesUntilResourceIsAtLevel(ref state, Resource.Obisian, blueprint.geodeRobotObsidianCost);
+                        var obsidianTimeout = GetMinutesUntilResourceIsAtLevel(ref state, Resource.Obsidian, blueprint.geodeRobotObsidianCost);
                         var maxTimeout = oreTimeout > obsidianTimeout ? oreTimeout : obsidianTimeout;
                         if (AdvanceTime(ref state, maxTimeout + 1))
                         {
-                            //path.finalState = state;
                             return true;
                         }
                         state.ore -= blueprint.geodeRobotOreCost;
@@ -149,34 +127,50 @@ namespace Advent.Assignments
 
         private static int DoChoice(Blueprint blueprint, State state, Resource build)//, out PathNode path)
         {
-            //path = new PathNode { buildCommand = build };
             if (UpdateState(blueprint, ref state, build))
                 return state.geodes;
 
-            var childScore = DoChoice(blueprint, state, Resource.Geode);//, out var childPath);
-            var maxChildScore = childScore;
+            int childScore;
+            var maxChildScore = state.geodes;
 
-            childScore = DoChoice(blueprint, state, Resource.Obisian);//, out var childPath1);
-            if (childScore > maxChildScore)
+            var possibleChoices = state.allowedRobots & (~state.bannedRobots);
+
+            if ((possibleChoices & Resource.Geode) > 0)
             {
-                maxChildScore = childScore;
-                //childPath = childPath1;
-            }
-            childScore = DoChoice(blueprint, state, Resource.Clay);//, out var childPath2);
-            if (childScore > maxChildScore)
-            {
-                maxChildScore = childScore;
-                //childPath = childPath2;
-            }
-            childScore = DoChoice(blueprint, state, Resource.Ore);//, out var childPath3);
-            if (childScore > maxChildScore)
-            {
-                maxChildScore = childScore;
-                //childPath = childPath3;
+                childScore = DoChoice(blueprint, state, Resource.Geode);//, out var childPath);
+                if (childScore > maxChildScore)
+                {
+                    maxChildScore = childScore;
+                }
             }
 
-            //path.child = childPath;
-            //path.finalState = state;
+            if ((possibleChoices & Resource.Obsidian) > 0)
+            {
+                childScore = DoChoice(blueprint, state, Resource.Obsidian);//, out var childPath1);
+                if (childScore > maxChildScore)
+                {
+                    maxChildScore = childScore;
+                }
+            }
+
+            if ((possibleChoices & Resource.Clay) > 0)
+            {
+                childScore = DoChoice(blueprint, state, Resource.Clay);//, out var childPath2);
+                if (childScore > maxChildScore)
+                {
+                    maxChildScore = childScore;
+                }
+            }
+
+            if ((possibleChoices & Resource.Ore) > 0)
+            {
+                childScore = DoChoice(blueprint, state, Resource.Ore);//, out var childPath3);
+                if (childScore > maxChildScore)
+                {
+                    maxChildScore = childScore;
+                }
+            }
+
             return maxChildScore;
         }
 
@@ -186,7 +180,7 @@ namespace Advent.Assignments
             {
                 Resource.Ore => (state.oreRobots, state.ore),
                 Resource.Clay => (state.clayRobots, state.clay),
-                Resource.Obisian => (state.obsidianRobots, state.obsidian),
+                Resource.Obsidian => (state.obsidianRobots, state.obsidian),
                 Resource.Geode => (state.geodeRobots, state.geodes),
                 _ => (0, 0),
             };
@@ -219,16 +213,14 @@ namespace Advent.Assignments
 
         private enum Resource
         {
-            Ore = 0,
-            Clay = 1,
-            Obisian = 2,
-            Geode = 3,
-            None = 4,
+            Ore = 1,
+            Clay = 2,
+            Obsidian = 4,
+            Geode = 8,
         }
 
         private struct State
         {
-            // TODO: Use bytes if size is a concern
             public int minutesLeft;
             public int ore;
             public int clay;
@@ -240,9 +232,12 @@ namespace Advent.Assignments
             public int obsidianRobots;
             public int geodeRobots;
 
+            public Resource allowedRobots;
+            public Resource bannedRobots;
+
             public override string ToString()
             {
-                return $"After minute {24 - minutesLeft}: Resources {ore},{clay},{obsidian},{geodes}; robots {oreRobots},{clayRobots},{obsidianRobots},{geodeRobots}";
+                return $"After minute {32 - minutesLeft}: Resources {ore},{clay},{obsidian},{geodes}; robots {oreRobots},{clayRobots},{obsidianRobots},{geodeRobots}";
             }
         }
 
@@ -259,6 +254,8 @@ namespace Advent.Assignments
 
             public int geodeRobotOreCost;
             public int geodeRobotObsidianCost;
+
+            public int maxOreCost;
 
             public static Blueprint Parse(string input)
             {
@@ -282,6 +279,14 @@ namespace Advent.Assignments
                 blueprint.geodeRobotOreCost = ParseUtils.ParseIntPositive(input, ref index);
                 index += 9;
                 blueprint.geodeRobotObsidianCost = ParseUtils.ParseIntPositive(input, ref index);
+
+                blueprint.maxOreCost = blueprint.oreRobotOreCost;
+                if (blueprint.clayRobotOreCost > blueprint.maxOreCost)
+                    blueprint.maxOreCost = blueprint.clayRobotOreCost;
+                if (blueprint.obsidianRobotOreCost > blueprint.maxOreCost)
+                    blueprint.maxOreCost = blueprint.obsidianRobotOreCost;
+                if (blueprint.geodeRobotOreCost > blueprint.maxOreCost)
+                    blueprint.maxOreCost = blueprint.geodeRobotOreCost;
 
                 return blueprint;
             }
