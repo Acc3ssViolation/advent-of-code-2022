@@ -172,6 +172,8 @@ namespace Advent.Assignments
                     var left = constantTree;
                     var right = binaryToInvert.Right;
                     constantTree = new BinaryNode(left, right, Opposite(binaryToInvert.OpCode));
+
+                    unknownTree = binaryToInvert.Left;
                 }
                 else
                 {
@@ -187,9 +189,9 @@ namespace Advent.Assignments
                         var right = binaryToInvert.Left;
                         constantTree = new BinaryNode(left, right, Opposite(binaryToInvert.OpCode));
                     }
-                }
 
-                unknownTree = unknownToTheLeft ? binaryToInvert.Left : binaryToInvert.Right;
+                    unknownTree = binaryToInvert.Right;
+                }
 #if SHOW_STEPS
                 var tmp = new EqualsNode(unknownTree, constantTree);
                 Logger.DebugLine($"[{step}] {tmp}");
