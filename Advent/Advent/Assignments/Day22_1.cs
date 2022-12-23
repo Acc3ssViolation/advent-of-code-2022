@@ -13,12 +13,14 @@ namespace Advent.Assignments
         {
             public int ChunkSize { get; }
             public int WorldSize { get; }
+            public int WorldSizeInTiles { get; }
             public T[][] Chunks { get; } 
 
             public World(int chunkSize, int worldSizeInChunks)
             {
                 ChunkSize = chunkSize;
                 WorldSize = worldSizeInChunks;
+                WorldSizeInTiles = worldSizeInChunks * chunkSize;
                 Chunks = new T[worldSizeInChunks * worldSizeInChunks][];
             }
 
@@ -51,13 +53,18 @@ namespace Advent.Assignments
 
             public bool TryGet(int x, int y, out T? data)
             {
+                data = default;
+
+                if (y < 0 || y >= WorldSizeInTiles) 
+                    return false;
+
+                if (x < 0 || x >= WorldSizeInTiles)
+                    return false;
+
                 var chunkIndex = GetChunkIndex(x, y);
                 var chunk = Chunks[chunkIndex];
                 if (chunk == null)
-                {
-                    data = default;
                     return false;
-                }
 
                 data = chunk[GetLocalIndex(x, y)];
                 return true;
@@ -90,6 +97,175 @@ namespace Advent.Assignments
             }
         }
 
+        private enum Rotation
+        {
+            Right,
+            Down,
+            Left,
+            Up,
+        }
+
+        private class Walker
+        {
+            public int X { get; set; }
+            public int Y { get; set; }
+            public Rotation Rotation { get; set; }
+
+            private World<bool> _world;
+
+            public Walker(World<bool> world)
+            {
+                _world = world ?? throw new ArgumentNullException(nameof(world));
+            }
+
+            public void MoveToStartPosition()
+            {
+                // The map MUST contain an available tile on the top row, so no need to bounds check
+                for (;; X += _world.ChunkSize)
+                {
+                    if (_world.TryGet(X, Y, out var tile))
+                    {
+                        // This will fail if there is no open tile within this chunk, but neither the test nor the real input have that
+                        while (tile)
+                        {
+                            X++;
+                            _world.TryGet(X, Y, out tile);
+                        }
+                        break;
+                    }
+                }
+
+                Logger.DebugLine($"Starting at {X},{Y}");
+            }
+
+            public void Move(int distance)
+            {
+                switch (Rotation)
+                {
+                    case Rotation.Left:
+                        {
+                            for (; distance > 0; distance--)
+                            {
+                                if (_world.TryGet(X - 1, Y, out var occupied))
+                                {
+                                    if (occupied)
+                                        return;
+                                    X--;
+                                }
+                                else
+                                {
+                                    // Wrapping time!
+                                    var checkX = _world.WorldSizeInTiles - 1;
+                                    while (!_world.TryGet(checkX, Y, out occupied))
+                                        checkX -= _world.ChunkSize;
+                                    if (occupied)
+                                        return;
+
+                                    X = checkX;
+                                }
+                            }
+                        }
+                        break;
+                    case Rotation.Right:
+                        {
+                            for (; distance > 0; distance--)
+                            {
+                                if (_world.TryGet(X + 1, Y, out var occupied))
+                                {
+                                    if (occupied)
+                                        return;
+                                    X++;
+                                }
+                                else
+                                {
+                                    // Wrapping time!
+                                    var checkX = 0;
+                                    while (!_world.TryGet(checkX, Y, out occupied))
+                                        checkX += _world.ChunkSize;
+                                    if (occupied)
+                                        return;
+
+                                    X = checkX;
+                                }
+                            }
+                        }
+                        break;
+                    case Rotation.Up:
+                        {
+                            for (; distance > 0; distance--)
+                            {
+                                if (_world.TryGet(X, Y - 1, out var occupied))
+                                {
+                                    if (occupied)
+                                        return;
+                                    Y--;
+                                }
+                                else
+                                {
+                                    // Wrapping time!
+                                    var checkY = _world.WorldSizeInTiles - 1;
+                                    while (!_world.TryGet(X, checkY, out occupied))
+                                        checkY -= _world.ChunkSize;
+                                    if (occupied)
+                                        return;
+
+                                    Y = checkY;
+                                }
+                            }
+                        }
+                        break;
+                    case Rotation.Down:
+                        {
+                            for (; distance > 0; distance--)
+                            {
+                                if (_world.TryGet(X, Y + 1, out var occupied))
+                                {
+                                    if (occupied)
+                                        return;
+                                    Y++;
+                                }
+                                else
+                                {
+                                    // Wrapping time!
+                                    var checkY = 0;
+                                    while (!_world.TryGet(X, checkY, out occupied))
+                                        checkY += _world.ChunkSize;
+                                    if (occupied)
+                                        return;
+
+                                    Y = checkY;
+                                }
+                            }
+                        }
+                        break;
+                }
+            }
+
+            public void RotateLeft()
+            {
+                if (Rotation == Rotation.Right)
+                    Rotation = Rotation.Up;
+                else
+                    Rotation--;
+            }
+
+            public void RotateRight()
+            {
+                if (Rotation == Rotation.Up)
+                    Rotation = Rotation.Right;
+                else
+                    Rotation++;
+            }
+
+            public string PrintMap()
+            {
+                var str = _world.PrintMap();
+                var strData = str.ToArray();
+                strData[X + Y * (_world.WorldSizeInTiles + 1)] = 'W';
+                return new string(strData);
+            }
+        }
+
         public string Run(IReadOnlyList<string> input)
         {
             // Example data uses 4x4 chunks, real data uses 50x50
@@ -112,7 +288,42 @@ namespace Advent.Assignments
 
             var movement = input[input.Count - 1];
 
-            return "";
+            var walker = new Walker(world);
+            walker.MoveToStartPosition();
+
+            var m = 0;
+            while (m < movement.Length)
+            {
+                var chr = movement[m];
+                if (chr == 'R')
+                {
+                    walker.RotateRight();
+                    m++;
+                }
+                else if (chr == 'L')
+                {
+                    walker.RotateLeft();
+                    m++;
+                }
+                else
+                {
+                    var distance = ParseUtils.ParseIntPositive(movement, ref m);
+                    walker.Move(distance);
+
+                    //Logger.DebugLine($"Move {distance} {walker.Rotation}");
+                    //Logger.DebugLine($"Moved to {walker.X}, {walker.Y}");
+
+                    //Logger.Line(walker.PrintMap());
+
+                    //Logger.Line();
+                }
+            }
+
+            var row = walker.Y + 1;
+            var col = walker.X + 1;
+            var password = 1000 * row + 4 * col + walker.Rotation;
+
+            return password.ToString();
         }
     }
 }
