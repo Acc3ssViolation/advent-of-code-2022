@@ -4,7 +4,7 @@ using Advent.Assignments;
 
 var runner = new Runner();
 
-const int Iterations = 10;
+const int Iterations = 1;
 //Logger.SetLevel(LogLevel.Info);
 
 #if AUTO_LOAD_ASSIGNMENTS
@@ -64,7 +64,8 @@ var interfaceType = typeof(IAssignment);
 //runner.Add(new Day21_2());
 //runner.Add(new Day22_1());
 //runner.Add(new Day22_2());
-runner.Add(new Day23_1());
+//runner.Add(new Day23_1());
+runner.Add(new Day23_2());
 #endif
 
 runner.LogTimingToFile = true;
