@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Text;
 
 namespace Advent.Assignments
 {
@@ -384,13 +385,14 @@ namespace Advent.Assignments
                     }
                     else
                     {
+                        // ??????
                         if (sidesToCubes[side][Direction.Left] == expected)
                         {
-                            rotations[side] = 1;
+                            rotations[side] = 3;
                         }
                         else
                         {
-                            rotations[side] = 3;
+                            rotations[side] = 1;
                         }
                     }
                 }
@@ -405,15 +407,21 @@ namespace Advent.Assignments
                         var attachedSide = (int)Cube.Expected((CubeSide)side, (Direction)normalizedDir);
                         var normalRotation = normalEdges[side * 4 + normalizedDir];
 
-                        Logger.DebugLine($"Normal rotation from {(CubeSide)side} to {(CubeSide)attachedSide} is {(RelativeRotation)normalRotation}");
+                        var attachedSideRotation = rotations[attachedSide];
+                        var sum = normalRotation + attachedSideRotation + 4 - rotations[side];
+                        Debug.Assert(sum >= 0);
+                        var finalRotation = (sum) % 4;
 
-                        var finalRotation = (normalRotation + rotations[attachedSide] + rotations[side]) % 4;
+                        //Logger.DebugLine($"Normal rotation from {(CubeSide)side} to {(CubeSide)attachedSide} is {(RelativeRotation)normalRotation}, final is {(RelativeRotation)finalRotation}");
+                        //Logger.DebugLine($"Normal direction from {(CubeSide)side} to {(CubeSide)attachedSide} is {(Direction)normalizedDir}, final is {(Direction)dir}");
+                        //Logger.Line();
 
-                        Logger.DebugLine($"Final rotation from {(CubeSide)side} to {(CubeSide)attachedSide} is {(RelativeRotation)finalRotation}");
-                        Logger.Line();
+                        Logger.DebugLine($"{(CubeSide)side}{(CubeSide)attachedSide} {normalRotation} {rotations[side]} {rotations[attachedSide]} {finalRotation}");
 
                         _wrapEdges.Add((sidesToIndexes[side], (Direction)dir), (sidesToIndexes[attachedSide], (RelativeRotation)finalRotation));
                     }
+
+                    Logger.Line();
                 }
 
                 Logger.Line();
@@ -543,9 +551,10 @@ namespace Advent.Assignments
         private class Walker
         {
             public Vector2Int Position { get; set; }
-            public Direction Rotation { get; set; }
+            public Direction Direction { get; set; }
 
             private World<bool> _world;
+            private List<(Vector2Int, Direction)> _path = new();
 
             public Walker(World<bool> world)
             {
@@ -573,13 +582,15 @@ namespace Advent.Assignments
                 Position = new Vector2Int(x, 0);
 
                 Logger.DebugLine($"Starting at {Position.x},{Position.y}");
+
+                _path.Add((Position, Direction));
             }
 
             public void Move(int distance)
             {
                 for (; distance > 0; distance--)
                 {
-                    var delta = Rotation switch
+                    var delta = Direction switch
                     {
                         Direction.Left => new Vector2Int(-1, 0),
                         Direction.Right => new Vector2Int(1, 0),
@@ -598,42 +609,60 @@ namespace Advent.Assignments
                     else
                     {
                         // Wrapping time!
-                        var wrapped = _world.Wrap(Position.x, Position.y, newPos.x, newPos.y, Rotation);
+                        var wrapped = _world.Wrap(Position.x, Position.y, newPos.x, newPos.y, Direction);
                         _world.TryGet(wrapped.X, wrapped.Y, out occupied);
                         if (occupied)
                             return;
 
-                        //Logger.DebugLine($"Wrapped from {Position.x}, {Position.y} to {wrapped.X}, {wrapped.Y}");
+                        Logger.DebugLine($"Wrapped from {Position.x}, {Position.y} to {wrapped.X}, {wrapped.Y}");
 
-                        Rotation = wrapped.Rotation;
+                        Direction = wrapped.Rotation;
                         Position = new Vector2Int(wrapped.X, wrapped.Y);
-
-                        //Logger.DebugLine(PrintMap());
                     }
+
+                    _path.Add((Position, Direction));
                 }
             }
 
             public void RotateLeft()
             {
-                if (Rotation == Direction.Right)
-                    Rotation = Direction.Up;
+                if (Direction == Direction.Right)
+                    Direction = Direction.Up;
                 else
-                    Rotation--;
+                    Direction--;
+
+                _path.Add((Position, Direction));
             }
 
             public void RotateRight()
             {
-                if (Rotation == Direction.Up)
-                    Rotation = Direction.Right;
+                if (Direction == Direction.Up)
+                    Direction = Direction.Right;
                 else
-                    Rotation++;
+                    Direction++;
+
+                _path.Add((Position, Direction));
             }
 
             public string PrintMap()
             {
                 var str = _world.PrintMap();
                 var strData = str.ToArray();
+
+                foreach (var point in _path)
+                {
+                    var chr = point.Item2 switch
+                    {
+                        Direction.Right => '>',
+                        Direction.Down => 'v',
+                        Direction.Left => '<',
+                        _ => '^',
+                    };
+                    strData[point.Item1.x + point.Item1.y * (_world.WorldSizeInTiles + 1)] = chr;
+                }
+
                 strData[Position.x + Position.y * (_world.WorldSizeInTiles + 1)] = 'W';
+
                 return new string(strData);
             }
         }
@@ -691,9 +720,11 @@ namespace Advent.Assignments
                 }
             }
 
+            Logger.Line(walker.PrintMap());
+
             var row = walker.Position.y + 1;
             var col = walker.Position.x + 1;
-            var password = 1000 * row + 4 * col + walker.Rotation;
+            var password = 1000 * row + 4 * col + walker.Direction;
 
             return password.ToString();
         }
