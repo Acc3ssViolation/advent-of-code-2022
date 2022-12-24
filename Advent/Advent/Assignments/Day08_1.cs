@@ -159,5 +159,10 @@ namespace Advent.Assignments
             var mask = 1U << (value & 0x1F);
             _flags[index] |= mask;
         }
+
+        public void Clear()
+        {
+            Array.Clear(_flags);
+        }
     }
 }
