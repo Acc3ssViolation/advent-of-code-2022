@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Drawing;
 using System.Text;
 
 namespace Advent.Assignments
@@ -246,205 +247,231 @@ namespace Advent.Assignments
 
             private int ChunkRight(int index) => index + 1;
 
+            private class Side
+            {
+                public int ChunkIndex { get; set; }
+                public CubeSide Id { get; set; }
+                /// <summary>
+                /// These are clockwise from the top left when looking at them on the 'normal' unwrapping (see CubeSide)
+                /// </summary>
+                public int[] Vertexes { get; }
+
+                public Side(int chunkIndex, CubeSide id)
+                {
+                    ChunkIndex = chunkIndex;
+                    Id = id;
+                    Vertexes = new int[4];
+
+                    // These are tl, tr, bl, br
+                    //LogSideCode(0, 1, 3, 2, CubeSide.A);
+                    //LogSideCode(4, 5, 0, 1, CubeSide.D);
+                    //LogSideCode(1, 5, 2, 6, CubeSide.C);
+                    //LogSideCode(3, 2, 7, 6, CubeSide.E);
+                    //LogSideCode(4, 0, 7, 3, CubeSide.B);
+                    //LogSideCode(5, 4, 6, 7, CubeSide.F);
+                }
+
+                public static (int Left, int Right) GetVertexesBelow(int left, int right)
+                {
+                    return (left, right) switch
+                    {
+                        (0, 1) => (3, 2),
+                        (4, 5) => (0, 1),
+                        (1, 5) => (2, 6),
+                        (3, 2) => (7, 6),
+                        (4, 0) => (7, 3),
+                        (5, 4) => (6, 7),
+
+                        (3, 0) => (2, 1),
+                        (0, 4) => (1, 5),
+                        (2, 1) => (6, 5),
+                        (7, 3) => (6, 2),
+                        (7, 4) => (3, 0),
+                        (6, 5) => (7, 4),
+
+                        (2, 3) => (1, 0),
+                        (1, 0) => (5, 4),
+                        (6, 2) => (5, 1),
+                        (6, 7) => (2, 3),
+                        (3, 7) => (0, 4),
+                        (7, 6) => (4, 5),
+
+                        (1, 2) => (0, 3),
+                        (5, 1) => (4, 0),
+                        (5, 6) => (1, 2),
+                        (2, 6) => (3, 7),
+                        (0, 3) => (4, 7),
+                        (4, 7) => (5, 6),
+
+                        _ => ThrowInvalidValue((left, right)),
+                    };
+                }
+
+                private static void LogSideCode(int a, int b, int c, int d, CubeSide side)
+                {
+                    Logger.DebugLine($"{side} = {GetSideCode(a, b, c, d)}");
+                }
+
+                private static int GetSideCode(int a, int b, int c, int d)
+                {
+                    Span<int> list = stackalloc int[4];
+                    list[0] = a;
+                    list[1] = b;
+                    list[2] = c;
+                    list[3] = d;
+                    list.Sort();
+
+                    var code = list[0] + list[1] * 8 + list[2] * 16 + list[3] * 24;
+                    return code;
+                }
+
+                public static CubeSide GetCubeSide(int a, int b, int c, int d)
+                {
+                    var code = GetSideCode(a, b, c, d);
+                    return code switch
+                    {
+                        112 => CubeSide.A,
+                        192 => CubeSide.D,
+                        241 => CubeSide.C,
+                        290 => CubeSide.E,
+                        256 => CubeSide.B,
+                        308 => CubeSide.F,
+                        _ => (CubeSide)ThrowInvalidValue(code),
+                    };
+                }
+
+                private static K ThrowInvalidValue<K>(K value) => throw new ArgumentException($"{value} is invalid.");
+
+                public override string ToString()
+                {
+                    return $"{this.Id} = {this.ChunkIndex}: {this.Vertexes.AggregateString()}";
+                }
+            }
+
+            private class WrapMapper
+            {
+                private World<T> _world;
+                private Queue<Side> _queue = new();
+                private HashSet<int> _checked = new();
+
+                public WrapMapper(World<T> world)
+                {
+                    _world = world ?? throw new ArgumentNullException(nameof(world));
+                }
+
+                public Side[] ComputeWrapping()
+                {
+                    _queue.Clear();
+
+                    var sides = new List<Side>(6);
+
+                    for (var index = 0; index < _world.Chunks.Length; index++)
+                    {
+                        if (_world.Chunks[index] == null)
+                            continue;
+
+                        var side = new Side(index, CubeSide.A);
+                        side.Vertexes[0] = 0;
+                        side.Vertexes[1] = 1;
+                        side.Vertexes[2] = 2;
+                        side.Vertexes[3] = 3;
+                        _queue.Enqueue(side);
+                        _checked.Add(index);
+                        break;
+                    }
+
+                    while (_queue.Count > 0)
+                    {
+                        var side = _queue.Dequeue();
+
+                        // Check below
+                        CheckChunk(side.ChunkIndex + _world.WorldSize, side.Vertexes[3], side.Vertexes[2], 0);
+
+                        // Check above
+                        CheckChunk(side.ChunkIndex - _world.WorldSize, side.Vertexes[1], side.Vertexes[0], 2);
+
+                        // Check left
+                        CheckChunk(side.ChunkIndex - 1, side.Vertexes[0], side.Vertexes[3], 1);
+
+                        // Check right
+                        CheckChunk(side.ChunkIndex + 1, side.Vertexes[2], side.Vertexes[1], 3);
+
+                        sides.Add(side);
+                    }
+
+                    return sides.ToArray();
+                }
+
+                private void CheckChunk(int chunkIndex, int topLeft, int topRight, int vertexOffset)
+                {
+                    if (chunkIndex < 0 || chunkIndex >= _world.Chunks.Length)
+                        return;
+                    if (_world.Chunks[chunkIndex] == null)
+                        return;
+                    if (_checked.Contains(chunkIndex)) 
+                        return;
+
+                    var (bottomLeft, bottomRight) = Side.GetVertexesBelow(topLeft, topRight);
+                    var side = new Side(chunkIndex, Side.GetCubeSide(topLeft, topRight, bottomLeft, bottomRight));
+                    // Note: the topLeft, topRight, etc. are rotated when viewed from the map, which is why we apply vertexOffset before storing them
+                    side.Vertexes[(vertexOffset + 0) % 4] = topLeft;
+                    side.Vertexes[(vertexOffset + 1) % 4] = topRight;
+                    side.Vertexes[(vertexOffset + 2) % 4] = bottomRight;
+                    side.Vertexes[(vertexOffset + 3) % 4] = bottomLeft;
+                    _checked.Add(chunkIndex);
+                    _queue.Enqueue(side);
+                }
+            }
+
             public void ComputeWrappingTable()
             {
                 _wrapEdges.Clear();
 
-                var sidesToCubes = new Cube[6];
-                var sidesToIndexes = new int[6] { -1, -1, -1, -1, -1, -1 };
-                var sidesLeftToFind = 6;
-                var queue = new Queue<(Cube Cube, int Index)>();
-
-                for (var index = 0; index < Chunks.Length; index++)
+                var wrapper = new WrapMapper(this);
+                var sides = wrapper.ComputeWrapping();
+                var rotationTable = new RelativeRotation[]
                 {
-                    if (Chunks[index] == null)
-                        continue;
-                    queue.Enqueue((new Cube(), index));
-                    break;
-                }
-
-                while (true)
-                {
-                    var current = queue.Dequeue();
-                    Logger.DebugLine($"Mapping side {current.Cube} to index {current.Index}");
-
-                    sidesToIndexes[(int)current.Cube.Face] = current.Index;
-                    sidesToCubes[(int)current.Cube.Face] = current.Cube;
-                    sidesLeftToFind--;
-                    if (sidesLeftToFind == 0)
-                        break;
-
-                    Cube side;
-                    side = current.Cube.RotateLeft();
-                    if (sidesToIndexes[(int)side.Face] < 0)
-                    {
-                        var index = ChunkLeft(current.Index);
-                        if (index >= 0 && index < Chunks.Length && Chunks[index] != null)
-                        {
-                            Logger.DebugLine($"{side} is left of {current.Cube}");
-                            queue.Enqueue((side, index));
-                        }
-                    }
-
-                    side = current.Cube.RotateRight();
-                    if (sidesToIndexes[(int)side.Face] < 0)
-                    {
-                        var index = ChunkRight(current.Index);
-                        if (index >= 0 && index < Chunks.Length && Chunks[index] != null)
-                        {
-                            Logger.DebugLine($"{side} is right of {current.Cube}");
-                            queue.Enqueue((side, index));
-                        }
-                    }
-
-                    side = current.Cube.RotateUp();
-                    if (sidesToIndexes[(int)side.Face] < 0)
-                    {
-                        var index = ChunkUp(current.Index);
-                        if (index >= 0 && index < Chunks.Length && Chunks[index] != null)
-                        {
-                            Logger.DebugLine($"{side} is up of {current.Cube}");
-                            queue.Enqueue((side, index));
-                        }
-                    }
-
-                    side = current.Cube.RotateDown();
-                    if (sidesToIndexes[(int)side.Face] < 0)
-                    {
-                        var index = ChunkDown(current.Index);
-                        if (index >= 0 && index < Chunks.Length && Chunks[index] != null)
-                        {
-                            Logger.DebugLine($"{side} is down of {current.Cube}");
-                            queue.Enqueue((side, index));
-                        }
-                    }
-                }
-
-                int a = sidesToIndexes[(int)CubeSide.A];
-                int e = sidesToIndexes[(int)CubeSide.B];
-                int f = sidesToIndexes[(int)CubeSide.C];
-                int b = sidesToIndexes[(int)CubeSide.D];
-                int c = sidesToIndexes[(int)CubeSide.E];
-                int d = sidesToIndexes[(int)CubeSide.F];
-
-                // The 'normalized' rotations
-                // Look up as (side * 4 + direction)
-                var normalEdges = new int[] {
-                    // A (order is right, down, left, up)
-                    (int) RelativeRotation.None,
-                    (int) RelativeRotation.None,
-                    (int) RelativeRotation.None,
-                    (int) RelativeRotation.None,
-
-                    // B
-                    (int) RelativeRotation.None,
-                    (int) RelativeRotation.Left,
-                    (int) RelativeRotation.None,
-                    (int) RelativeRotation.Right,
-
-                    // C
-                    (int) RelativeRotation.None,
-                    (int) RelativeRotation.Right,
-                    (int) RelativeRotation.None,
-                    (int) RelativeRotation.Left,
-
-                    // D
-                    (int) RelativeRotation.Right,
-                    (int) RelativeRotation.None,
-                    (int) RelativeRotation.Left,
-                    (int) RelativeRotation.Half,
-
-                    // E
-                    (int) RelativeRotation.Left,
-                    (int) RelativeRotation.Half,
-                    (int) RelativeRotation.Right,
-                    (int) RelativeRotation.None,
-
-                    // F
-                    (int) RelativeRotation.None,
-                    (int) RelativeRotation.Half,
-                    (int) RelativeRotation.None,
-                    (int) RelativeRotation.Half,
+                    RelativeRotation.Right,
+                    RelativeRotation.None,
+                    RelativeRotation.Left,
+                    RelativeRotation.Half,
                 };
 
-                var rotations = new int[6];
-
-                for (var side = 0; side < 6; side++)
+                for (int s = 0; s < sides.Length; s++)
                 {
-                    var actual = sidesToCubes[side][Direction.Up];
-                    var expected = Cube.ExpectedUp((CubeSide)side);
+                    var side = sides[s];
 
-                    if (expected == actual)
+                    for (var edge = 0; edge < 4; edge++)
                     {
-                        // Nothing
-                        rotations[side] = 0;
-                    }
-                    else if (expected == Cube.Opposite(actual))
-                    {
-                        rotations[side] = 2;
-                    }
-                    else
-                    {
-                        // ??????
-                        if (sidesToCubes[side][Direction.Left] == expected)
+                        var startIndex = (edge + 0) % 4;
+                        var sv = side.Vertexes[startIndex];
+                        var ev = side.Vertexes[(edge + 1) % 4];
+
+                        // Find the matching edge. Note that our start must match their end and vice versa
+                        for (int o = 0; o < sides.Length; o++)
                         {
-                            rotations[side] = 3;
-                        }
-                        else
-                        {
-                            rotations[side] = 1;
+                            if (o == s)
+                                continue;
+
+                            var other = sides[o];
+                            // Note: these indexes are the location of _our_ start and end vertexes in the other side's buffer
+                            var otherStartIndex = Array.IndexOf(other.Vertexes, sv);
+                            var otherEndIndex = Array.IndexOf(other.Vertexes, ev);
+                            if (otherStartIndex < 0 || otherEndIndex < 0)
+                                continue;
+
+                            // Assert on the property described above
+                            Debug.Assert((otherEndIndex + 1) % 4 == otherStartIndex);
+
+                            // So, we found our matching edge. Figure out the rotation and we're done
+                            var rotationIndex = (startIndex - otherStartIndex + 4) % 4;
+
+                            var rotation = rotationTable[rotationIndex];
+                            var direction = (Direction)((startIndex + 3) % 4);
+                            _wrapEdges.Add((side.ChunkIndex, direction), (other.ChunkIndex, rotation));
                         }
                     }
                 }
-
-                for (var side = 0; side < 6; side++)
-                {
-                    for (var dir = 0; dir < 4; dir++)
-                    {
-                        //var attachedSide = (int)sidesToCubes[side][(Direction)dir];
-                        var normalizedDir = (rotations[side] + dir) % 4;
-                        
-                        var attachedSide = (int)Cube.Expected((CubeSide)side, (Direction)normalizedDir);
-                        var normalRotation = normalEdges[side * 4 + normalizedDir];
-
-                        var attachedSideRotation = rotations[attachedSide];
-                        var sum = normalRotation + attachedSideRotation + 4 - rotations[side];
-                        Debug.Assert(sum >= 0);
-                        var finalRotation = (sum) % 4;
-
-                        //Logger.DebugLine($"Normal rotation from {(CubeSide)side} to {(CubeSide)attachedSide} is {(RelativeRotation)normalRotation}, final is {(RelativeRotation)finalRotation}");
-                        //Logger.DebugLine($"Normal direction from {(CubeSide)side} to {(CubeSide)attachedSide} is {(Direction)normalizedDir}, final is {(Direction)dir}");
-                        //Logger.Line();
-
-                        Logger.DebugLine($"{(CubeSide)side}{(CubeSide)attachedSide} {normalRotation} {rotations[side]} {rotations[attachedSide]} {finalRotation}");
-
-                        _wrapEdges.Add((sidesToIndexes[side], (Direction)dir), (sidesToIndexes[attachedSide], (RelativeRotation)finalRotation));
-                    }
-
-                    Logger.Line();
-                }
-
-                Logger.Line();
-
-                //_wrapEdges.Add((a, Direction.Right), (c, RelativeRotation.Half));
-                //_wrapEdges.Add((a, Direction.Up), (d, RelativeRotation.Half));
-                //_wrapEdges.Add((a, Direction.Left), (b, RelativeRotation.Left));      Right
-
-                //_wrapEdges.Add((e, Direction.Right), (c, RelativeRotation.Right));    Right
-
-                //_wrapEdges.Add((f, Direction.Down), (d, RelativeRotation.Half));
-                //_wrapEdges.Add((f, Direction.Left), (b, RelativeRotation.Right));     Left
-
-                //_wrapEdges.Add((b, Direction.Up), (a, RelativeRotation.Right));       Half
-                //_wrapEdges.Add((b, Direction.Down), (f, RelativeRotation.Left));      Half
-
-                //_wrapEdges.Add((c, Direction.Up), (e, RelativeRotation.Left));
-                //_wrapEdges.Add((c, Direction.Right), (a, RelativeRotation.Half));
-                //_wrapEdges.Add((c, Direction.Down), (d, RelativeRotation.Left));
-
-                //_wrapEdges.Add((d, Direction.Up), (a, RelativeRotation.Half));
-                //_wrapEdges.Add((d, Direction.Down), (f, RelativeRotation.Half));
-                //_wrapEdges.Add((d, Direction.Left), (c, RelativeRotation.Right));
             }
 
             private (int X, int Y) GetChunkOrigin(int chunkIndex)
@@ -581,7 +608,7 @@ namespace Advent.Assignments
 
                 Position = new Vector2Int(x, 0);
 
-                Logger.DebugLine($"Starting at {Position.x},{Position.y}");
+                //Logger.DebugLine($"Starting at {Position.x},{Position.y}");
 
                 _path.Add((Position, Direction));
             }
@@ -614,7 +641,7 @@ namespace Advent.Assignments
                         if (occupied)
                             return;
 
-                        Logger.DebugLine($"Wrapped from {Position.x}, {Position.y} to {wrapped.X}, {wrapped.Y}");
+                        //Logger.DebugLine($"Wrapped from {Position.x}, {Position.y} to {wrapped.X}, {wrapped.Y}");
 
                         Direction = wrapped.Rotation;
                         Position = new Vector2Int(wrapped.X, wrapped.Y);
@@ -720,7 +747,7 @@ namespace Advent.Assignments
                 }
             }
 
-            Logger.Line(walker.PrintMap());
+            //Logger.Line(walker.PrintMap());
 
             var row = walker.Position.y + 1;
             var col = walker.Position.x + 1;
