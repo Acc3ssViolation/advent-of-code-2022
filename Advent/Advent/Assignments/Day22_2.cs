@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿//#define TRACE_PATH
+using System.Diagnostics;
 using System.Drawing;
 using System.Text;
 
@@ -438,8 +439,9 @@ namespace Advent.Assignments
             public Direction Direction { get; set; }
 
             private World<bool> _world;
+#if TRACE_PATH
             private List<(Vector2Int, Direction)> _path = new();
-
+#endif
             public Walker(World<bool> world)
             {
                 _world = world ?? throw new ArgumentNullException(nameof(world));
@@ -466,8 +468,9 @@ namespace Advent.Assignments
                 Position = new Vector2Int(x, 0);
 
                 //Logger.DebugLine($"Starting at {Position.x},{Position.y}");
-
+#if TRACE_PATH
                 _path.Add((Position, Direction));
+#endif
             }
 
             public void Move(int distance)
@@ -503,8 +506,9 @@ namespace Advent.Assignments
                         Direction = wrapped.Rotation;
                         Position = new Vector2Int(wrapped.X, wrapped.Y);
                     }
-
+#if TRACE_PATH
                     _path.Add((Position, Direction));
+#endif
                 }
             }
 
@@ -514,8 +518,9 @@ namespace Advent.Assignments
                     Direction = Direction.Up;
                 else
                     Direction--;
-
+#if TRACE_PATH
                 _path.Add((Position, Direction));
+#endif
             }
 
             public void RotateRight()
@@ -524,15 +529,16 @@ namespace Advent.Assignments
                     Direction = Direction.Right;
                 else
                     Direction++;
-
+#if TRACE_PATH
                 _path.Add((Position, Direction));
+#endif
             }
 
             public string PrintMap()
             {
                 var str = _world.PrintMap();
                 var strData = str.ToArray();
-
+#if TRACE_PATH
                 foreach (var point in _path)
                 {
                     var chr = point.Item2 switch
@@ -544,7 +550,7 @@ namespace Advent.Assignments
                     };
                     strData[point.Item1.x + point.Item1.y * (_world.WorldSizeInTiles + 1)] = chr;
                 }
-
+#endif
                 strData[Position.x + Position.y * (_world.WorldSizeInTiles + 1)] = 'W';
 
                 return new string(strData);
