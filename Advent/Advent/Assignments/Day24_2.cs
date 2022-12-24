@@ -164,6 +164,8 @@ namespace Advent.Assignments
                 _visited.Add(current);
                 int nextTime;
 
+                var previousTime = current.T;
+
                 while (true)
                 {
                     nextTime = current.T + 1;
@@ -180,6 +182,12 @@ namespace Advent.Assignments
                         break;
 
                     current = _queue.Dequeue();
+                    // Slight optimization, we can get rid of the visited set whenever we start processing a new timestamp
+                    if (previousTime != current.T)
+                    {
+                        previousTime = current.T;
+                        _visited.Clear();
+                    }
                 }
 
                 return nextTime;
