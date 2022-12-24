@@ -31,153 +31,8 @@ namespace Advent.Assignments
             F
         }
 
-        private struct Cube
-        {
-            public CubeSide Face { get; private set; }
-            public CubeSide Back { get; private set; }
-            public CubeSide Up { get; private set; }
-            public CubeSide Down { get; private set; }
-            public CubeSide Left { get; private set; }
-            public CubeSide Right { get; private set; }
-
-            public CubeSide this[Direction dir] => dir switch
-            {
-                Direction.Right => Right,
-                Direction.Down => Down,
-                Direction.Left => Left,
-                _ => Up,
-            };
-
-            public Cube()
-            {
-                Face = CubeSide.A;
-                Back = CubeSide.F;
-                Up = CubeSide.D;
-                Down = CubeSide.E;
-                Left = CubeSide.B;
-                Right = CubeSide.C;
-            }
-
-            public static CubeSide Expected(CubeSide side, Direction dir) => dir switch
-            {
-                Direction.Right => ExpectedRight(side),
-                Direction.Down => ExpectedDown(side),
-                Direction.Left => ExpectedLeft(side),
-                _ => ExpectedUp(side),
-            };
-
-            public static CubeSide ExpectedUp(CubeSide side) => side switch
-            {
-                CubeSide.A => CubeSide.D,
-                CubeSide.B => CubeSide.D,
-                CubeSide.C => CubeSide.D,
-                CubeSide.F => CubeSide.D,
-                CubeSide.E => CubeSide.A,
-                _ => CubeSide.F,
-            };
-
-            public static CubeSide ExpectedDown(CubeSide side) => side switch
-            {
-                CubeSide.A => CubeSide.E,
-                CubeSide.B => CubeSide.E,
-                CubeSide.C => CubeSide.E,
-                CubeSide.F => CubeSide.E,
-                CubeSide.E => CubeSide.F,
-                _ => CubeSide.A,
-            };
-
-            public static CubeSide ExpectedRight(CubeSide side) => side switch
-            {
-                CubeSide.A => CubeSide.C,
-                CubeSide.B => CubeSide.A,
-                CubeSide.C => CubeSide.F,
-                CubeSide.F => CubeSide.B,
-                CubeSide.E => CubeSide.C,
-                _ => CubeSide.C,
-            };
-
-            public static CubeSide ExpectedLeft(CubeSide side) => side switch
-            {
-                CubeSide.A => CubeSide.B,
-                CubeSide.B => CubeSide.F,
-                CubeSide.C => CubeSide.A,
-                CubeSide.F => CubeSide.C,
-                CubeSide.E => CubeSide.B,
-                _ => CubeSide.B,
-            };
-
-            public static CubeSide Opposite(CubeSide side) => side switch
-            {
-                CubeSide.A => CubeSide.F,
-                CubeSide.B => CubeSide.C,
-                CubeSide.C => CubeSide.B,
-                CubeSide.F => CubeSide.A,
-                CubeSide.E => CubeSide.D,
-                _ => CubeSide.E,
-            }; 
-
-            public Cube RotateUp()
-            {
-                return new Cube
-                {
-                    Face = Up,
-                    Up = Back,
-                    Back = Down,
-                    Down = Face,
-                    Right = Right,
-                    Left = Left,
-                };
-            }
-
-            public Cube RotateDown()
-            {
-                return new Cube
-                {
-                    Face = Down,
-                    Up = Face,
-                    Back = Up,
-                    Down = Back,
-                    Right = Right,
-                    Left = Left,
-                };
-            }
-
-            public Cube RotateRight()
-            {
-                return new Cube
-                {
-                    Face = Right,
-                    Right = Back,
-                    Back = Left,
-                    Left = Face,
-                    Up = Up,
-                    Down = Down,
-                };
-            }
-
-            public Cube RotateLeft()
-            {
-                return new Cube
-                {
-                    Face = Left,
-                    Right = Face,
-                    Back = Right,
-                    Left = Back,
-                    Up = Up,
-                    Down = Down,
-                };
-            }
-
-            public override string ToString()
-            {
-                return Face.ToString();
-            }
-        }
-
         private class World<T>
         {
-            
-
             public int ChunkSize { get; }
             public int WorldSize { get; }
             public int WorldSizeInTiles { get; }
@@ -239,17 +94,15 @@ namespace Advent.Assignments
                 return true;
             }
 
-            private int ChunkUp(int index) => index - WorldSize;
-
-            private int ChunkDown(int index) => index + WorldSize;
-
-            private int ChunkLeft(int index) => index - 1;
-
-            private int ChunkRight(int index) => index + 1;
-
             private class Side
             {
+                /// <summary>
+                /// Index of the chunk that this side maps to
+                /// </summary>
                 public int ChunkIndex { get; set; }
+                /// <summary>
+                /// Side Id, used for debugging purposes only
+                /// </summary>
                 public CubeSide Id { get; set; }
                 /// <summary>
                 /// These are clockwise from the top left when looking at them on the 'normal' unwrapping (see CubeSide)
@@ -273,6 +126,9 @@ namespace Advent.Assignments
 
                 public static (int Left, int Right) GetVertexesBelow(int left, int right)
                 {
+                    // This table was written using some notes on a piece of paper.
+                    // It maps the 'top left' and 'top right' vetexes to their matching bottom vertexes.
+                    // Note that this is all a matter of perspective.
                     return (left, right) switch
                     {
                         (0, 1) => (3, 2),
@@ -328,6 +184,7 @@ namespace Advent.Assignments
                 public static CubeSide GetCubeSide(int a, int b, int c, int d)
                 {
                     var code = GetSideCode(a, b, c, d);
+                    // This table was generated using LogSideCode
                     return code switch
                     {
                         112 => CubeSide.A,
