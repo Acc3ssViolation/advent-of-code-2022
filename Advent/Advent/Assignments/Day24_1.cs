@@ -1,9 +1,14 @@
-﻿namespace Advent.Assignments
+﻿using System.ComponentModel;
+
+namespace Advent.Assignments
 {
     internal class Day24_1 : IAssignment
     {
         private class World
         {
+            public int Width => _width;
+            public int Height => _height;
+
             private int _width;
             private int _height;
             private int _blizzardStride;
@@ -117,11 +122,74 @@
             }
         }
 
+        private record struct TimePosition(int X, int Y, int T);
+
+        private class Elves
+        {
+            private World _world;
+            private Queue<TimePosition> _queue = new();
+            private HashSet<TimePosition> _visited = new();
+
+            private int _goalX;
+            private int _goalY;
+
+            public Elves(World world, int goalX, int goalY)
+            {
+                _world = world ?? throw new ArgumentNullException(nameof(world));
+                _goalX = goalX;
+                _goalY = goalY;
+            }
+
+            public int FindShortestPath()
+            {
+                var current = new TimePosition(0, 0, 1);
+                _visited.Add(current);
+                var nextTime = 0;
+
+                while (true)
+                {
+                    nextTime = current.T + 1;
+
+                    if (TryNeighbour(current.X, current.Y, nextTime))
+                        break;
+                    if (TryNeighbour(current.X + 1, current.Y, nextTime))
+                        break;
+                    if (TryNeighbour(current.X - 1, current.Y, nextTime))
+                        break;
+                    if (TryNeighbour(current.X, current.Y + 1, nextTime))
+                        break;
+                    if (TryNeighbour(current.X, current.Y - 1, nextTime))
+                        break;
+
+                    current = _queue.Dequeue();
+                }
+
+                return nextTime + 1;
+            }
+
+            private bool TryNeighbour(int x, int y, int t)
+            {
+                if (x < 0 || y < 0 || x >= _world.Width || y >= _world.Height)
+                    return false;
+
+                var timePos = new TimePosition(x, y, t);
+                if (_visited.Contains(timePos))
+                    return false;
+
+                if (!_world.IsCoveredByBlizzard(x, y, t))
+                {
+                    if (x == _goalX && y == _goalY)
+                        return true;
+
+                    _visited.Add(timePos);
+                    _queue.Enqueue(timePos);
+                }
+                return false;
+            }
+        }
+
         public string Run(IReadOnlyList<string> input)
         {
-            // 120x24
-            // 5x5
-
             // We exclude the edges. The expedition can always move to the square below it on turn 1 (at least in the example and my input)
             var width = input[0].Length - 2;
             var height = input.Count - 2;
@@ -133,14 +201,14 @@
                 world.ParseLine(y, input[y + 1]);
             }
 
-            for (int t = 0; t < 10; t++)
-            {
-                Logger.WarningLine($"Minute {t}");
-                world.Print(t);
-            }
+            // Breath First Search
+            var goalX = width - 1;
+            var goalY = height - 1;
 
-            // They are cyclic
-            return string.Empty;
+            var elves = new Elves(world, goalX, goalY);
+            var shortestPath = elves.FindShortestPath();
+            
+            return shortestPath.ToString();
         }
     }
 }
