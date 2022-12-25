@@ -54,7 +54,7 @@ namespace Advent.Assignments
                 Console.Out.Write('\n');
             }
 
-            return "";
+            return new string(screen);
         }
 
         

@@ -1,4 +1,4 @@
-﻿//#define AUTO_LOAD_ASSIGNMENTS
+﻿#define AUTO_LOAD_ASSIGNMENTS
 using Advent;
 using Advent.Assignments;
 
@@ -68,7 +68,7 @@ var interfaceType = typeof(IAssignment);
 //runner.Add(new Day23_2());
 //runner.Add(new Day24_1());
 //runner.Add(new Day24_2());
-runner.Add(new Day25_1());
+//runner.Add(new Day25_1());
 //runner.Add(new Day25_2());
 #endif
 
